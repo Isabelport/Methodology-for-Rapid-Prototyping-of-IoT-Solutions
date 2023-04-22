@@ -39,7 +39,7 @@ int ls[2];
 int lm[2];
 int laps = 0;
 int sum = 0;
-int total_h, total_m; //total hours and minutes of certain task
+int total_h, total_m; //total hours and minutes of certain task 
 String seconds, minutes;
 String current, temp;
 long tt = 0; //aux to count milliseconds
