@@ -1,0 +1,76 @@
+<!DOCTYPE HTML><html>
+<head>
+  <title>ESP Web Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+  <link rel="icon" href="data:,">
+  <style>
+    html {font-family: Arial; display: inline-block; text-align: center;}
+    p { font-size: 1.2rem;}
+    body {  margin: 0;}
+    .topnav { overflow: hidden; background-image: linear-gradient(to bottom right, rgba(50, 127, 243, 0.5),rgba(176, 0, 216, 0.5), rgba(255, 2, 242, 0.6)); color: white; font-size: 1rem; }
+    .content { padding: 20px; }
+    .card { background-color: white; box-shadow: 2px 2px 12px 1px rgba(140,140,140,.5); }
+    .cards { max-width: 800px; margin: 0 auto; display: grid; grid-gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); }
+    .reading { font-size: 1.4rem; }
+  </style>
+</head>
+<body>
+  <div class="topnav">
+    <h1>FabLab Demo Project</h1>
+    <h1>ESP32-CAM QR Code & AP WiFi demo</h1>
+  </div>
+  <div class="content">
+    <div class="cards">
+      <div class="card">
+        <p><i class="fas fa-camera-retro" style="color:#05f92a;"></i> <i class="fas fa-qrcode" style="color:#05f92a;"></i> Latest Scan</p><p><span class="reading"><span id="s1">%SCAN1%</span></p>
+      </div>
+      <div class="card">
+        <p><i class="fas fa-camera" style="color:#0105f1;"></i> <i class="fas fa-qrcode" style="color:#0105f1;"></i> Previous 1</p><p><span class="reading"><span id="s2">%SCAN2%</span></p>
+      </div>
+      <div class="card">
+        <p><i class="fas fa-camera" style="color:#000000;"></i> <i class="fas fa-qrcode" style="color:#000000;"></i> Previous 2</p><p><span class="reading"><span id="s3">%SCAN3%</span></p>
+      </div>
+    </div>
+  </div>
+  <br>
+  <br>
+  <br>
+  <b>Code Spliced together by FabLab technicaians from the following sources:</b>
+  <p style="font-size:10pt">Rui Santos, Web server-sent events. Complete project details can be found <a href="https://RandomNerdTutorials.com/esp32-web-server-sent-events-sse/">here</a></p>
+  <p style="font-size:10pt">Alvaro Viebrantz (alvarowolfx), ESP32 QR Code Reader project. Github project can be found <a href="https://github.com/alvarowolfx/ESP32QRCodeReader">here</a></p>
+<script>
+if (!!window.EventSource) {
+ var source = new EventSource('/events');
+ 
+ source.addEventListener('open', function(e) {
+  console.log("Events Connected");
+ }, false);
+ source.addEventListener('error', function(e) {
+  if (e.target.readyState != EventSource.OPEN) {
+    console.log("Events Disconnected");
+  }
+ }, false);
+ 
+ source.addEventListener('message', function(e) {
+  console.log("message", e.data);
+ }, false);
+ 
+ source.addEventListener('scan1', function(e) {
+  console.log("scan1", e.data);
+  document.getElementById("s1").innerHTML = e.data;
+ }, false);
+ 
+ source.addEventListener('scan2', function(e) {
+  console.log("scan2", e.data);
+  document.getElementById("s2").innerHTML = e.data;
+ }, false);
+ 
+ source.addEventListener('scan3', function(e) {
+  console.log("scan3", e.data);
+  document.getElementById("s3").innerHTML = e.data;
+ }, false);
+}
+</script>
+</body>
+</html>
