@@ -9,7 +9,7 @@ TFT_eSPI tft = TFT_eSPI();
 
 //Font header files
 #include "DSEG7_Classic_Regular_50.h"
-#include "DSEG7_Classic_Regular_32.h"
+#include "DSEG7_Classic_Regular_12.h"
 #include "DejaVu_LGC_Sans_Bold_12.h"
 // Include the header files that contain the icons
 #include "Down.h"
@@ -32,19 +32,24 @@ TFT_eSPI tft = TFT_eSPI();
 int idi[4] = {1,2,3,7}; 
 
 //Time related
+int laps = 0;
+int sum = 0;
+long ss1 = 0; //aux to count milliseconds
+long ss2 = 0;  
 int ss = 0;  //miliseconds/10
 int s = 0;   //seconds
 int m = 0;   //minutes
-int ls[2];
-int lm[2];
-int laps = 0;
-int sum = 0;
-int total_h, total_m; //total hours and minutes of certain task 
-String seconds, minutes;
-String current, temp;
-long tt = 0; //aux to count milliseconds
-long tt2 = 0;  
-int laptime = 0;
+String seconds, minutes; //minutes and seconds of current task
+String current, temp; //current time and auxiliar variable
+int tt_h = 0;
+int tt_m = 0; //total hours and minutes of certain task
+int tt_s = 0;
+int tt_ss = 0;
+String tt_hours, tt_minutes, tt_seconds;
+String tt_current, tt_temp;
+int laptime = 0; //laptime in seconds
+int laptime_m = 0;
+int laptime_s = 0;
 
 //Interface 
 int first = 1;
@@ -75,6 +80,7 @@ const int ipaddress[4] = {103, 97, 67, 25};
 byte nuidPICC[4] = {0, 0, 0, 0};
 MFRC522::MIFARE_Key key;
 MFRC522 rfid = MFRC522(SS_PIN, RST_PIN);
+int rfid_on = 0;
 
 const int pwmFreq = 5000;
 const int pwmResolution = 8;
@@ -135,11 +141,13 @@ void setup() {
   connectTB(); //UNCOMMENT
 
   //Initialize RFID
-  Serial.println("Initialize System");
- 	SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN); // CHANGE DEFAULT PINS
- 	rfid.PCD_Init();
- 	Serial.print("Reader :");
- 	rfid.PCD_DumpVersionToSerial();
+  if (rfid_on){
+    Serial.println("Initialize System");
+    SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN); // CHANGE DEFAULT PINS
+    rfid.PCD_Init();
+    Serial.print("Reader :");
+    rfid.PCD_DumpVersionToSerial();
+  }
 
   ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
   ledcAttachPin(TFT_BL, pwmLedChannelTFT);
@@ -147,7 +155,7 @@ void setup() {
   
   assign_values();
   waitfortask_screen();
-  Serial.println("go to loop");
+  //Serial.println("go to loop");
 }
 
 void reconnect() {
@@ -194,19 +202,11 @@ void sendInfo(int min, int sec, int task) {
   }
   // Reconnect to ThingsBoard, if needed
   connectTB();
-  /*
-  while (!tb.connected()) {
-    Serial.println("Connecting to The ThingsBoard");
-    if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
-      Serial.println("Failed to connect");
-      delay(500);  //return;
-    }
-  }*/
   //Serial.println("-> Sending data...");
   const int data_items = 3;
   Telemetry data[data_items] = {
-    { "min", min },
-    { "sec", sec },
+    { "Minutes", min },
+    { "Seconds", sec },
     { "task", task },
     };
 
@@ -216,7 +216,7 @@ void sendInfo(int min, int sec, int task) {
   tb.loop();
 }
 
-void sendInfo_final(int av, int pr, int m, int s) {
+void sendInfo_final(int av, int pr, int total_h, int total_min) {
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Not connected to WiFi... reconnecting");
@@ -230,8 +230,8 @@ void sendInfo_final(int av, int pr, int m, int s) {
   Telemetry data[data_items] = {
     { "Average", av },
     { "Personal Record", pr },
-    { "Minutes", m },
-    { "Seconds", s },
+    { "total_h", total_h },
+    { "total_min", total_min },
     };
 
   tb.sendTelemetry(data, data_items);
@@ -240,6 +240,12 @@ void sendInfo_final(int av, int pr, int m, int s) {
   tb.loop();
 }
 
+void reset_tasktime(){ 
+  tft.fillRect(10, 70, 120, 60, TFT_BLACK);
+  //tft.drawString(current, 10, 70); //task time
+  s = 0;
+  m = 0;
+}
 
 void reset() {
   first = 0;
@@ -261,15 +267,11 @@ void reset() {
   tft.drawLine(200,30,200,200,yellow);
   tft.drawLine(0,30,500,30,yellow);
 
-  if ()
   laps = 0;
-  ls[0] = 0;
-  ls[1] = 0;
-  lm[0] = 0;
-  lm[1] = 0;
   data[id].pr = 0;
-  s = 0;
-  m = 0;
+  tt_s = 0;
+  tt_m = 0;
+  tt_h = 0;
   sum = 0;
 }
 
@@ -286,9 +288,16 @@ void waitfortask_screen(){
     tft.drawString("passar cartao da tarefa.", 14, 85, 4);
   }
   while(1){
-    readRFID();
+    if (rfid_on){
+      readRFID();
+    }
+    else
+    {
+      delay(2000);
+      id = 0;
+    }
     if (id != -1){
-      Serial.println("Encontrou cartao");
+      Serial.println("Card found");
       break_screen();
       break;
     }
@@ -354,34 +363,72 @@ void break_screen(){
 
 
 void loop() {
-    tt = millis();
+    ss1 = millis();
+    
     minutes = time_to_string(m);
     seconds = time_to_string(s);
 
-    current = minutes + ":" + seconds;
-    //Serial.println(current);
+    tt_hours = time_to_string(tt_h);
+    tt_minutes = time_to_string(tt_m);
+    tt_seconds = time_to_string(tt_s);
+    //tt_seconds = time_to_string(tt_s);
 
+
+    current = minutes + ":" + seconds;
+    //tt_current = tt_hours + ":" + tt_minutes + ":" + tt_seconds;
+    tt_current = tt_hours + ":" + tt_minutes;
+    //Serial.println(current);
     if (current != temp) {
       tft.setFreeFont(&DSEG7_Classic_Regular_50);
       tft.drawString(current, 10, 70);
-
       temp = current;
     }
-  
 
-  if (tt > tt2 + 9) {
-    tt2 = tt;
+    if (tt_current != tt_temp) {
+      
+      //tft.drawString("Total time:",10, 130);
+      tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
+      //tft.setFreeFont(&DSEG7_Classic_Regular_12);
+      tft.drawString("TOTAL:", 10, 130);
+      //tft.setFreeFont(&DSEG7_Classic_Regular_12);
+      tft.drawString(tt_current, 75, 130);
+      tt_temp = tt_current;
+    }
+  
+  // MILLISECONDS
+  if (ss1 > ss2 + 9) { //counting milliseconds
+    ss2 = ss1;
     ss++;
+    tt_ss++;
   }
 
-  if (ss > 99) {
+  // SECONDS
+  if (ss > 99) { //counting seconds for task time
     s++;
     ss = 0;
-
   }
+
+  if (tt_ss > 99) { //counting seconds for total time
+    Serial.print("Task time: "); Serial.print(current); Serial.print("  Total time:"); Serial.print(tt_current);Serial.print(":");Serial.println(tt_seconds);
+    tt_s++;
+    tt_ss = 0;
+  }
+
+  // MINUTES
   if (s > 59) {
     s = 0;
     m++;
+  }
+
+  if (tt_s > 59) {
+    tt_s = 0;
+    tt_m++;
+  }
+
+  // HOURS
+  if (tt_m > 59) {
+    tt_m = 0;
+    tt_h++;
   }
 
   
@@ -430,9 +477,9 @@ void average_func(){
     
 
   }
-  Serial.println(data[id].av);
+  Serial.print(data[id].av);
   av = round(data[id].av);
-  Serial.println(av);
+  Serial.print(" --> "); Serial.println(av);
   int av_m = get_min(data[id].av);
   int av_s = get_sec(data[id].av);
   String av_m_ = time_to_string(av_m);
@@ -520,7 +567,14 @@ void buttons() {
   if (digitalRead(0) == 0) {
     if (pom == 0) {
       laps++;
-      
+
+      laptime_m = m;
+      laptime_s = s;
+      laptime = laptime_m * 60 + laptime_s;
+
+    
+      Serial.print("Laptime: "); Serial.print(laptime_m); Serial.print(":"); Serial.println(laptime_s);
+      /*
       if (laps == 1){ // [ s ; 0 ] [ m ; 0 ]
         ls[0] = s;
         lm[0] = m;
@@ -534,8 +588,9 @@ void buttons() {
       //Serial.print("ls[0] ls[1] e lm[0] lm[1]: "); Serial.print(ls[0]); Serial.print(" "); Serial.print(ls[1]); Serial.print(" "); Serial.print(lm[0]); Serial.print(" "); Serial.println(lm[1]); 
       
       laptime = (lm[0]*60 + ls[0]) - (lm[1]*60 + ls[1]);
-      int laptime_m = get_min(laptime);
-      int laptime_s = get_sec(laptime);
+      
+      laptime_m = get_min(laptime);
+      laptime_s = get_sec(laptime);*/
 
       //lap time is always positive
       if (laptime_m < 0)
@@ -547,8 +602,8 @@ void buttons() {
       score_time(); 
       average_func();
 
-      sendInfo(laptime_m, laptime_s, id); //UNCOMMENT
-      
+      sendInfo(laptime_m, laptime_s, id);
+      reset_tasktime();
       pom = 1;
     }
   }
