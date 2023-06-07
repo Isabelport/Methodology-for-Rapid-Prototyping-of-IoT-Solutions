@@ -17,8 +17,8 @@
 // ===========================
 // Enter your WiFi credentials
 // ===========================
-const char* ssid = "MobileRouter-0090";
-const char* password = "11639121";
+const char* ssid = "NOS-9D70";
+const char* password = "82cdeb96f5db";
 
 void startCameraServer();
 

@@ -54,16 +54,16 @@ void sendInfo(char idx){
   }
   // Reconnect to ThingsBoard, if needed
   while (!tb.connected()) {
-    Serial.println("Connecting TB");
+    Serial.println("Connecting to Things Board");
     if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
       Serial.println("Failed to connect");
       delay(500); //return;
     }
   }
-  Serial.println("Send");
+  Serial.println("Sending data...");
   const int data_items = 1;
-  //Serial.print("Passing carrier: ");
-  //Serial.println(idx, DEC);
+  Serial.print("Passing carrier: ");
+  Serial.println(idx, DEC);
   Telemetry data[data_items] = {
     { "id", idx },
   };
@@ -76,21 +76,21 @@ void sendInfo(char idx){
 
 int newCarrier(int id, unsigned long curr){
 
-  //Serial.print("Not seen in: ");
-  //Serial.print(millis()-curr);
-  //Serial.println(" ms");
+  Serial.print("Not seen in: ");
+  Serial.print(millis()-curr);
+  Serial.println(" ms");
 
 
   if (id == last_id){
     if (millis() - curr > 5000){
-      //Serial.println ("Too long since last seen");    
+      Serial.println ("Too long since last seen");    
       return YES;
     }
-    //Serial.println("Carrier already seen");
+    Serial.println("Carrier already seen");
     return NO;
   }
   else{
-    //Serial.println("New carrier");
+    Serial.println("New carrier");
     last_id = id;
     return YES;
   }
@@ -115,10 +115,7 @@ void onQrCodeTask(void *pvParameters)
   {
     if (reader.receiveQrCode(&qrCodeData, 100))
     {
-      //Serial.println("Found QRCode");
-      digitalWrite(FLASH, HIGH);
-      //Serial.println("Flash on");
-      delay(2000);
+      Serial.println("Found QRCode");
       if (qrCodeData.valid)
       {
         char * id = 0;
@@ -127,32 +124,26 @@ void onQrCodeTask(void *pvParameters)
 
         id = (char*)qrCodeData.payload; 
         idi = conc_int((int)(*id), (int)*(id+1)); 
-        //Serial.print("Carrier id: ");
+        Serial.print("Carrier id: ");
         Serial.println(idi);
+
+        digitalWrite(FLASH, HIGH);
+        Serial.println("Flash on");
+        delay(100);
+        digitalWrite(FLASH, LOW);
         
         //sendUpdate = 1 if new carrier is found
         sendUpdate = newCarrier(idi, time_);
         //Send to TB new information
         if(sendUpdate){
           time_ = millis();
-          sendInfo(idi);
-          digitalWrite(FLASH, LOW);
-          delay(200);
-          digitalWrite(FLASH, HIGH);
-          delay(200);
-          digitalWrite(FLASH, LOW);
-          delay(200);
-          digitalWrite(FLASH, HIGH);
-          delay(200);
-          digitalWrite(FLASH, LOW);
-          
+          sendInfo(idi);          
         }
       }
       else
       {
-        Serial.print("Invalid QR Code ");
+        Serial.println("Invalid QR Code ");
         //Serial.println((const int)*qrCodeData.payload);
-        digitalWrite(FLASH, LOW);
         
       }
     }
@@ -176,9 +167,8 @@ void setup()
   reader.beginOnCore(1);
   Serial.println("Begin QR Code reader");
   digitalWrite(FLASH, HIGH);
-  delay(200);
+  delay(100);
   digitalWrite(FLASH, LOW);
-  delay(200);  
   xTaskCreate(onQrCodeTask, "onQrCode", 4 * 1024, NULL, 4, NULL);
 
 }

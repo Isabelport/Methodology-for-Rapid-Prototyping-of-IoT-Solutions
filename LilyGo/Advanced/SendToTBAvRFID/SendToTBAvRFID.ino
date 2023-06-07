@@ -28,15 +28,12 @@ TFT_eSPI tft = TFT_eSPI();
 
 #define yellow 0x65DB
 
-#define NUMBER_OF_TASKS 4
-int idi[4] = {1,2,3,7}; 
-
 //Time related
 int laps = 0;
 int sum = 0;
 long ss1 = 0; //aux to count milliseconds
 long ss2 = 0;  
-int ss = 0;  //miliseconds/10
+int ss = 0;  //miliseconds
 int s = 0;   //seconds
 int m = 0;   //minutes
 String seconds, minutes; //minutes and seconds of current task
@@ -138,7 +135,7 @@ void setup() {
   //Initialize wifi and TB
   WiFi.begin(STA_SSID, STA_PASS);
   InitWiFi();
-  connectTB(); //UNCOMMENT
+  connectTB();
 
   //Initialize RFID
   if (rfid_on){
@@ -574,23 +571,6 @@ void buttons() {
 
     
       Serial.print("Laptime: "); Serial.print(laptime_m); Serial.print(":"); Serial.println(laptime_s);
-      /*
-      if (laps == 1){ // [ s ; 0 ] [ m ; 0 ]
-        ls[0] = s;
-        lm[0] = m;
-      }
-      else{ // [ s ; s(old) ] [ m ; m(old) ]
-        ls[1] = ls[0];
-        lm[1] = lm[0];
-        ls[0] = s;
-        lm[0] = m;
-      }
-      //Serial.print("ls[0] ls[1] e lm[0] lm[1]: "); Serial.print(ls[0]); Serial.print(" "); Serial.print(ls[1]); Serial.print(" "); Serial.print(lm[0]); Serial.print(" "); Serial.println(lm[1]); 
-      
-      laptime = (lm[0]*60 + ls[0]) - (lm[1]*60 + ls[1]);
-      
-      laptime_m = get_min(laptime);
-      laptime_s = get_sec(laptime);*/
 
       //lap time is always positive
       if (laptime_m < 0)

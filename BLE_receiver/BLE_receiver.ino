@@ -33,6 +33,7 @@ unsigned long Times[MAX_DEVICES];  //last seen in ms (from active)
 int active_beacons = 0;
 int flag_send = 0;
 unsigned long last_timestamp;
+int setup_;
 
 /*
  * Finds index of active[] with beacon ID = id. 
@@ -123,9 +124,20 @@ void sendInfo(int type, int idx) {
       { "id", active[idx][0] },
       { "rssi", active[idx][1] },
     };
-
     tb.sendTelemetry(data, data_items);
-  } else if (type == AWAY) {
+  } 
+  else if (type == AWAY) {
+    if (setup_ == 1){
+      Serial.print("Initializing Beacon : ");
+      Serial.println(idx);
+      Telemetry data[data_items] = {
+        { "state", AWAY },
+        { "id", idx },
+        { "rssi", 0 },
+      };
+    tb.sendTelemetry(data, data_items);
+    }
+    else {
     //device active[idx][0] has not been seen with rssi active[idx][1]
     Serial.print("Beacon OUT : ");
     Serial.println(active[idx][0], HEX);
@@ -135,6 +147,7 @@ void sendInfo(int type, int idx) {
       { "rssi", 0 },
     };
     tb.sendTelemetry(data, data_items);
+    }
   }
   // Process messages
   tb.loop();
@@ -147,8 +160,14 @@ void sendInfo(int type, int idx) {
 
 void checkState() {
   Serial.println("--- checkState() ---");
-  Serial.println(last_timestamp);
+
+  //Serial.println(last_timestamp);
   for (int i = 0; i < MAX_DEVICES; i++) {
+    if(active[i][0]!=-1){
+    Serial.print("Active");Serial.print(i);Serial.print(" :");Serial.print(active[i][0]);Serial.print(";");Serial.print(active[i][1]);Serial.print(";");Serial.println(active[i][2]);
+    Serial.print("Times");Serial.print(i);Serial.print(":");Serial.println(Times[i]);
+    Serial.println(last_timestamp);
+    }
     if (Times[i] != 0 && (last_timestamp - Times[i]) > TIME_THRESHOLD) {
       //if(active[i][0]!=-1){ // ISABEL
       Serial.print("Removing Beacon: ");
@@ -170,7 +189,6 @@ void sendUpdate() {
   Serial.println("--- sendUpdate() ---");
   for (int i = 0; i < MAX_DEVICES; i++) {
     // if beacon info was updated
-    Serial.print(i);
     if (active[i][2] == 1) {
       sendInfo(NEAR, i);
       active[i][2] = 0;
@@ -189,8 +207,6 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
         int beaconID = advertisement[21];  //advertisement[19];
         Serial.print("Found! Beacon ID: ");
         Serial.println(beaconID, HEX);
-        for (int i = 0; i < MAX_DEVICES; i++) {
-        }
         // if beacon seen last scan, get its index in active[], else idx=-1 (to add it to active[])
         int idx = getIndex(beaconID);
         if (idx == -1) {
@@ -217,20 +233,6 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 // Setup an application
 void setup() {
   Serial.begin(SERIAL_DEBUG_BAUD);
-  //initialize devices array
-  for (int i = 0; i < MAX_DEVICES; i++) {
-    active[i][0] = -1;
-    active[i][1] = 0;
-    active[i][2] = 0;
-    Times[i] = 0;
-    Serial.print("id: ");
-    Serial.print(active[i][0]);
-    Serial.print("rssi: ");
-    Serial.print(active[i][1]);
-    Serial.print("to send: ");
-    Serial.println(active[i][2]);
-  }
-
   //initialize wifi
   WiFi.begin(STA_SSID, STA_PASS);
   InitWiFi();
@@ -239,6 +241,22 @@ void setup() {
   InitBLE();
   //initialize timestamp
   last_timestamp = millis();
+  for (int i = 0; i < MAX_DEVICES; i++) {
+    setup_ = 1;
+    sendInfo(AWAY,i+1);  //initializes all beacons in ThingsBoard to Away
+    //initialize devices array
+    active[i][0] = -1;
+    active[i][1] = 0;
+    active[i][2] = 0; 
+    Times[i] = 0;
+    Serial.print("id: ");
+    Serial.print(active[i][0]);
+    Serial.print("rssi: ");
+    Serial.print(active[i][1]);
+    Serial.print("to send: ");
+    Serial.println(active[i][2]);
+    setup_ = 0;
+  }
 }
 
 // Main application loop
