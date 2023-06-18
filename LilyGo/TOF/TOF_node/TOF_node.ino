@@ -6,8 +6,8 @@
 #define TRUE 1
 #define FALSE 0
 
-const char* ntpServer = "pool.ntp.org"; // NTP server to request epoch time
-unsigned long epochTime; // Variable to save current epoch time
+//const char* ntpServer = "pool.ntp.org"; // NTP server to request epoch time
+//unsigned long epochTime; // Variable to save current epoch time
 
 #define MEDIR_CAP 3  //PA09
 #define CAP_V A2
@@ -187,50 +187,26 @@ void InitWiFi(){
 void setup() {
   asm(".global _printf_float");  //very impotant for sprintf with float
   Serial.begin(115200);
-  // Bootup sodaq_wdt_safe_delay to programm the board.
-  //setup_BOD33();
-  //nvm_wait_states();
 
   //initialize wifi
   WiFi.begin(STA_SSID, STA_PASS);
   InitWiFi();
 
-  //Wire.begin(I2C_SDA, I2C_SCL);
   Wire.begin();
-  //sodaq_wdt_safe_delay(5000);
-  //sodaq_wdt_enable(WDT_PERIOD_8X);  //ENABLE WDT
-  //setup_rtc_debug();
 
   pinMode(MEDIR_CAP, OUTPUT);
   digitalWrite(MEDIR_CAP, LOW);
   pinMode(CAP_V, INPUT);
-  //analogReference(AR_DEFAULT);
-
   pinMode(XSHUT, OUTPUT);
   digitalWrite(XSHUT, HIGH);
-
   pinMode(DIO1, INPUT);
 
   initDistSensor();
 
   pinMode(int_tof, INPUT_PULLUP);
-  //pinMode(int_tof, INPUT);
 
   attachInterrupt(int_tof, interrupt, FALLING);  //Pin of interrupt is digital PIN2 AQUI PIN DE INTERRUPT
-  //stuff to allow falling interrupt
-  // Set the XOSC32K to run in standby
-  //SYSCTRL->XOSC32K.bit.RUNSTDBY = 1;
-
-  // Configure EIC to use GCLK1 which uses XOSC32K
-  // This has to be done after the first call to attachInterrupt()
-  //GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(GCM_EIC) | GCLK_CLKCTRL_GEN_GCLK1 | GCLK_CLKCTRL_CLKEN;
-
-  //sodaq_wdt_reset();
-
   distanceSensor.clearInterrupt();
-
-  //sodaq_wdt_safe_delay(1000);
-
   distanceSensor.clearInterrupt();
 
   digitalWrite(EN_SENSOR, LOW);

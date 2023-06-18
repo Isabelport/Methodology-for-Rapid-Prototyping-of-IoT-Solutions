@@ -164,8 +164,8 @@ void checkState() {
   //Serial.println(last_timestamp);
   for (int i = 0; i < MAX_DEVICES; i++) {
     if(active[i][0]!=-1){
-    Serial.print("Active");Serial.print(i);Serial.print(" :");Serial.print(active[i][0]);Serial.print(";");Serial.print(active[i][1]);Serial.print(";");Serial.println(active[i][2]);
-    Serial.print("Times");Serial.print(i);Serial.print(":");Serial.println(Times[i]);
+    Serial.print("Active");Serial.print(i);Serial.print(" : ");Serial.print(active[i][0]);Serial.print(";");Serial.print(active[i][1]);Serial.print(";");Serial.println(active[i][2]);
+    Serial.print("Times");Serial.print(i);Serial.print(" : ");Serial.println(Times[i]);
     Serial.println(last_timestamp);
     }
     if (Times[i] != 0 && (last_timestamp - Times[i]) > TIME_THRESHOLD) {

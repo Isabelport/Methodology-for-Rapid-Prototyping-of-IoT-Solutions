@@ -20,8 +20,8 @@
 // #define THINGSBOARD_SERVER  "demo.thingsboard.io"
 
 //BLE Reveiver Device Token
-#define TOKEN "xBKIxRmBAR9QzLdDCXGz" //esp1
-//#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
+//#define TOKEN "xBKIxRmBAR9QzLdDCXGz" //esp1
+#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
 
 
 /***** BLE System UUID *****/

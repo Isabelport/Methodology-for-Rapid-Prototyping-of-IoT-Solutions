@@ -1,41 +1,26 @@
-#include <WiFi.h> // WiFi control for ESP32
-//#define THINGSBOARD_ENABLE_PROGMEM 0
-#include <ThingsBoard.h>  // ThingsBoard SDK
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
-//RFID
-#include <SPI.h>//https://www.arduino.cc/en/reference/SPI
-#include <MFRC522.h>//https://github.com/miguelbalboa/rfid
 
-//Font header files
-#include "DSEG7_Classic_Regular_50.h"
-#include "DSEG7_Classic_Regular_12.h"
-#include "DejaVu_LGC_Sans_Bold_12.h"
-// Include the header files that contain the icons
-#include "Down.h"
-#include "Equal.h"
-#include "Up.h"
-#include "Star.h"
+#include "fonts.h"
+#include "icons.h"
 // Include the header files that contain wi-fi password
 #include "secrets.h"
+#include "rfid.h"
+#include "buttons.h"
+#include "communication.h"
+#include "laptime.h"
+#include "tof.h"
 //TOF
 #include <Wire.h>
 #include "SparkFun_VL53L1X.h" //Click here to get the library: http://librarymanager/All#SparkFun_VL53L1X
 
 //TOF constants
-#define INTERRUPT_PIN 18
-#define SHUTDOWN_PIN 17
-#define SDA 16
-#define SCL 21
+#define INTERRUPT_PIN 43
+#define SHUTDOWN_PIN 44
+#define SDA_PIN 16
+#define SCL_PIN 21
 //SFEVL53L1X distanceSensor;
 SFEVL53L1X distanceSensor(Wire, SHUTDOWN_PIN, INTERRUPT_PIN);
-
-//RFID Constants
-#define SS_PIN 10
-#define RST_PIN 18
-#define MISO_PIN 13
-#define MOSI_PIN 11
-#define SCK_PIN 12
 
 #define color_yellow 0x65DB
 
@@ -62,9 +47,6 @@ int laptime_s = 0;
 //Interface 
 int first = 1;
 
-//value given by rfid
-int id = -1;
-
 //task related
 struct task {
   String task_name;
@@ -74,50 +56,9 @@ struct task {
 int av; // average in integer
 
 task data[5]; //4 structs of task
-
 //CHANGE ACCORDING TO TASK
 int treshold = 1; //time of difference between an increase or decrease in relation to average of time of certain task 
 
-//buttons
-int pom = 0;  
-int pom2 = 0;
-
-//RFID parameters
-const int ipaddress[4] = {103, 97, 67, 25};
-//Variables
-byte nuidPICC[4] = {0, 0, 0, 0};
-MFRC522::MIFARE_Key key;
-MFRC522 rfid = MFRC522(SS_PIN, RST_PIN);
-int rfid_on = 1; //turn off(0)/on(1) rfid sensor for testing purposes
-
-const int pwmFreq = 5000;
-const int pwmResolution = 8;
-const int pwmLedChannelTFT = 0;
-
-//buttons
-const int GREEN_BUTTON = 43; //pin 16
-const int YELLOW_BUTTON = 44; //pin 21
-
-struct button{
-  int buttonState;
-  int lastButtonState;
-  unsigned long lastDebounceTime;  // the last time the output pin was toggled
-  int newRequest;
-  int aux_newRequest;
-  int clicked;
-};
-
-button green = {HIGH, HIGH, 0, 0, 1, 0};
-button yellow = {HIGH, HIGH, 0, 0, 1, 0};
-
-unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
-
-// Initialize ThingsBoard client
-WiFiClient espClient;
-// Initialize ThingsBoard instance
-ThingsBoard tb(espClient);
-// the Wifi radio's status
-int status = WL_IDLE_STATUS;
 
 /*******************************************CODE*********************************************/
 void setup() {
@@ -129,11 +70,8 @@ void setup() {
   Serial.println("TFT ready");
   tft.setSwapBytes(true);
   //Initialize buttons
-  //pinMode(0, INPUT_PULLUP);
-  //pinMode(35, INPUT_PULLUP);
   pinMode(GREEN_BUTTON, INPUT_PULLUP);
   pinMode(YELLOW_BUTTON, INPUT_PULLUP);
-  //delay(1000);
 
   tft.drawString("Por favor ligar-se ao Wi-Fi.", 14, 70, 4);
 
@@ -144,23 +82,36 @@ void setup() {
 
   //Initialize RFID
   if (rfid_on){
-    Serial.println("Initialize System");
+    Serial.println("Initialize RFID");
     SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN); // CHANGE DEFAULT PINS
     rfid.PCD_Init();
     Serial.print("Reader :");
     rfid.PCD_DumpVersionToSerial();
   }
   Serial.println("rfid check");
-  ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
-  ledcAttachPin(TFT_BL, pwmLedChannelTFT);
-  ledcWrite(pwmLedChannelTFT, 67);
+  rfid_settings();
+
+  //Initialize ToF
+  Wire.begin(SDA_PIN, SCL_PIN); //SDA SCL
+  pinMode(SHUTDOWN_PIN, OUTPUT);
+  digitalWrite(SHUTDOWN_PIN, HIGH);
+  pinMode(INTERRUPT_PIN, INPUT_PULLUP);  
+  Serial.println("Initialize ToF");
+
+  if (distanceSensor.begin() != 0) //Begin returns 0 on a good init
+  {
+    Serial.println("Sensor failed to begin. Please check wiring. Freezing...");
+    while (1)
+      ;
+  }
+  Serial.println("Sensor online!");
+  distanceSensor.setDistanceModeLong();
 
   //Serial.println("ledc check");
   
   assign_values();
   Serial.println("lets");
   waitfortask_screen();
-  
   
   Serial.println("go to loop");
 }
@@ -190,90 +141,8 @@ void assign_values(){ // id 0-4
   return;
 }
 
-void reconnect() {
-  // Loop until we're reconnected
-  status = WiFi.status();
-  if (status != WL_CONNECTED) {
-    WiFi.begin(STA_SSID, STA_PASS);
-    while (WiFi.status() != WL_CONNECTED) {
-      delay(500);
-      Serial.print(".");
-    }
-    Serial.println("Connected to AP");
-  }
-}
-
-void InitWiFi() {
-  Serial.println("Connecting to AP ...");
-  // attempt to connect to WiFi network
-  WiFi.begin(STA_SSID, STA_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("Connected to AP");
-}
-
-void connectTB(){
-  // Reconnect to ThingsBoard, if needed
-  while (!tb.connected()) {
-    Serial.println("Connecting to The ThingsBoard");
-    if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
-      Serial.println("Failed to connect");
-      delay(500);  //return;
-    }
-  }
-  Serial.println("Connected to ThingsBoard");
-}
-
-void sendInfo(int min, int sec, int task) {
-  // Reconnect to WiFi, if needed
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print("Not connected to WiFi... reconnecting");
-    reconnect();
-    delay(500);  //return;
-  }
-  // Reconnect to ThingsBoard, if needed
-  connectTB();
-  //Serial.println("-> Sending data...");
-  const int data_items = 3;
-  Telemetry data[data_items] = {
-    { "Minutes", min },
-    { "Seconds", sec },
-    { "task", task },
-    };
-
-  tb.sendTelemetry(data, data_items);
-
-  // Process messages
-  tb.loop();
-}
-
-void sendInfo_final(int av, int pr, int total_h, int total_min) {
-  // Reconnect to WiFi, if needed
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print("Not connected to WiFi... reconnecting");
-    reconnect();
-    delay(500);  //return;
-  }
-  // Reconnect to ThingsBoard, if needed
-  connectTB();
-
-  const int data_items = 4;
-  Telemetry data[data_items] = {
-    { "Average", av },
-    { "Personal Record", pr },
-    { "total_h", total_h },
-    { "total_min", total_min },
-    };
-
-  tb.sendTelemetry(data, data_items);
-
-  // Process messages
-  tb.loop();
-}
-
-void reset() {
+//zeros all variables
+void reset() { 
   first = 0;
   tft.fillScreen(TFT_BLACK);
   tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
@@ -305,6 +174,7 @@ void reset() {
   sum = 0;
 }
 
+//screen wait for task
 void waitfortask_screen(){
   tft.fillScreen(TFT_BLACK);
   Serial.println("Wait for task Screen");
@@ -415,13 +285,9 @@ void loop() {
     tt_hours = time_to_string(tt_h);
     tt_minutes = time_to_string(tt_m);
     tt_seconds = time_to_string(tt_s);
-    //tt_seconds = time_to_string(tt_s);
-
 
     current = minutes + ":" + seconds;
-    //tt_current = tt_hours + ":" + tt_minutes + ":" + tt_seconds;
     tt_current = tt_hours + ":" + tt_minutes + ":" + tt_seconds;
-    //Serial.println(current);
     if (current != temp) {
       tft.setFreeFont(&DSEG7_Classic_Regular_50);
       tft.drawString(current, 10, 70);
@@ -449,7 +315,7 @@ void loop() {
   }
 
   if (tt_ss > 99) { //counting seconds for total time
-    Serial.print("Task time: "); Serial.print(current); Serial.print("  Total time:"); Serial.print(tt_current);
+    Serial.print("Task time: "); Serial.print(current); Serial.print("  Total time:"); Serial.println(tt_current);
     //Serial.print(":");Serial.println(tt_seconds);
     tt_s++;
     tt_ss = 0;
@@ -497,11 +363,7 @@ int get_sec(int total){
 void average_func(){
   sum = sum + laptime;
   float av_float;
-  //if (data[id].av == round( sum / laps)) return; //average stays the same
   Serial.print("id: ");Serial.print(id);Serial.print("   av: ");Serial.print(round(data[id].av));Serial.print("   pr: ");Serial.println(data[id].pr);
-
-  //Serial.println(id);
-  //Serial.print("Average: "); Serial.println(data[id].av);
   Serial.print("Sum: "); Serial.print(sum); Serial.print("   Laps: "); Serial.println(laps);
 
   if (data[id].av == 0){ //when average is not defined yet (== 0)
@@ -509,11 +371,6 @@ void average_func(){
     data[id].av = sum / laps;
   }
   else{
-    /**/
-    //av_float = data[id].av * 0.8 + sum / laps * 0.2;
-    //Serial.println(av_float);
-    /**/
-    //if (data[id].av == round( data[id].av * 0.8 + sum / laps * 0.2 )) return; 
     Serial.print("Average updated: "); Serial.print(data[id].av); Serial.print(" --> "); 
     data[id].av = data[id].av * 0.8 + sum / laps * 0.2 ; //data[id].av = sum / laps; // 124s
     
@@ -522,25 +379,37 @@ void average_func(){
   Serial.print(data[id].av);
   av = round(data[id].av);
   Serial.print(" --> "); Serial.println(av);
+  //just for display of average
   int av_m = get_min(data[id].av);
   int av_s = get_sec(data[id].av);
   String av_m_ = time_to_string(av_m);
   String av_s_ = time_to_string(av_s);
 
-  //Serial.println(av_m_ + ":" + av_s_);
   tft.fillRect(265,7,80 ,20 ,TFT_BLACK);
   tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
   tft.drawString(av_m_ + ":" + av_s_, 265, 7);
 
 }
 
-bool personal_record(){
+bool personal_record(int pr, int laptime){
+  /*
   if (data[id].pr == 0){ //personal record not defined yet
     data[id].pr = laptime; 
     return 0;
   }
   else if (laptime < data[id].pr){ //better time than personal record
     data[id].pr = laptime;
+    return 1;
+  }
+  else 
+    return 0;
+  */
+  if (pr == 0){ //personal record not defined yet
+    pr = laptime; 
+    return 0;
+  }
+  else if (laptime < pr){ //better time than personal record
+    pr = laptime;
     return 1;
   }
   else 
@@ -574,7 +443,7 @@ void score_time(){
   int x_text = 220;
   int y_text = 105;
 
-  if (personal_record()){
+  if (personal_record(data[id].pr, laptime)){
     tft.pushImage (x_image, y_image, 32, 32, star); 
     tft.fillRect( x_text, y_text, 35, 100, TFT_BLACK);
     if (minus) tft.drawString("-" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
@@ -603,45 +472,6 @@ void score_time(){
     else tft.drawString("+" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
     
   }
-}
-
-button read_button(button any, int pin){
-  any.clicked = 0;
-  int reading = digitalRead(pin);
-  // check to see if you just pressed the button
-  // since the last press to ignore any noise:
-  if (reading != any.lastButtonState) {
-    // reset the debouncing timer
-    any.lastDebounceTime = millis();
-  }
-
-  if ((millis() - any.lastDebounceTime) > debounceDelay) {
-    // whatever the reading is at, it's been there for longer than the debounce
-    // delay, so take it as the actual current state:
-
-    // if the button state has changed:
-    if (reading != any.buttonState) {
-      any.buttonState = reading;
-
-      // new button has request if the new button state is LOW (because of resistor pull up)
-      if (any.buttonState == LOW) {
-        any.newRequest = 1;
-        any.aux_newRequest = 1; //only read request once
-      }
-      else
-        any.newRequest = 0;
-
-    }
-  }
-  
-  if (any.newRequest && any.aux_newRequest){
-    any.aux_newRequest = any.aux_newRequest - 1;
-    any.clicked = 1;
-  }
-  // save the reading. Next time through the loop, it'll be the lastButtonState:
-  any.lastButtonState = reading;
-
-  return any;
 }
 
 void buttons() {
@@ -691,58 +521,4 @@ void buttons() {
     pom2 = 0;
   }
 }
-
-// RFID functions
-void readRFID(void ) { /* function readRFID */
- 	////Read RFID card
- 	for (byte i = 0; i < 6; i++) {
- 			key.keyByte[i] = 0xFF;
- 	}
- 	// Look for new 1 cards
- 	if ( ! rfid.PICC_IsNewCardPresent())
- 			return;
- 	// Verify if the NUID has been readed
- 	if ( 	!rfid.PICC_ReadCardSerial())
- 			return;
- 	// Store NUID into nuidPICC array
- 	for (byte i = 0; i < 4; i++) {
- 			nuidPICC[i] = rfid.uid.uidByte[i];
- 	}
- 	Serial.print("RFID In dec: ");
- 	printDec(rfid.uid.uidByte, rfid.uid.size);
-  id = hashFunc(rfid.uid.uidByte,  rfid.uid.size);
-  Serial.println();
-  Serial.print("Task being performed: ");
-  Serial.println(id);
-
- 	// Halt PICC
- 	rfid.PICC_HaltA();
- 	// Stop encryption on PCD
- 	rfid.PCD_StopCrypto1();
-}
-
-//returns hashtag of the rfid uuid
-int hashFunc(byte *buffer, int size) {
-  String bufferStr = "";
-  int bufferAll;
-  int rest;
-
-
-  for (int i = 0; i < size; i++) {
-    bufferStr = bufferStr + String(buffer[i]);
-  }
-
-  bufferAll = bufferStr.toInt(); //convert to one int
-  rest = bufferAll % 17;
-
-  return rest;
-}
-
-void printDec(byte *buffer, byte bufferSize) {
- 	for (byte i = 0; i < bufferSize; i++) {
- 			Serial.print(buffer[i] < 0x10 ? " 0" : " ");
- 			Serial.print(buffer[i], DEC);
- 	}
-}
-
 
