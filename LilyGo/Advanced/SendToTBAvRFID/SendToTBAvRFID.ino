@@ -593,8 +593,8 @@ void buttons() {
 
   if (digitalRead(14) == 0) {
     if (pom2 == 0){
+      sendInfo_final(round(data[id].av), data[id].pr, tt_h, tt_m);
       id = -1;
-      sendInfo_final(round(data[id].av), data[id].pr, m, s);
       waitfortask_screen();
       pom2 = 1;
     }

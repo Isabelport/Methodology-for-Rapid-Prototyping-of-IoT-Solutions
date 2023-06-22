@@ -224,7 +224,6 @@ void sendInfo_final(int av, int pr, int m, int s) {
   }
   // Reconnect to ThingsBoard, if needed
   connectTB();
-
   const int data_items = 4;
   Telemetry data[data_items] = {
     { "Average", av },
@@ -556,8 +555,8 @@ void buttons() {
 
   if (digitalRead(14) == 0) {
     if (pom2 == 0){
-      id = -1;
       sendInfo_final(round(data[id].av), data[id].pr, m, s);
+      id = -1;
       waitfortask_screen();
       pom2 = 1;
     }

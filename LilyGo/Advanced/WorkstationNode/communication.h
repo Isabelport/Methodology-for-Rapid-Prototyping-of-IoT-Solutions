@@ -3,9 +3,9 @@
 
 
 // Initialize ThingsBoard client
-WiFiClient espClient;
+WiFiClient espclient; //espclient
 // Initialize ThingsBoard instance
-ThingsBoard tb(espClient);
+ThingsBoard tb(espclient); //espclient
 // the Wifi radio's status
 int status = WL_IDLE_STATUS;
 
@@ -54,21 +54,21 @@ void sendInfo(int min, int sec, int task) {
   }
   // Reconnect to ThingsBoard, if needed
   connectTB();
-  //Serial.println("-> Sending data...");
   const int data_items = 3;
-  Telemetry data[data_items] = {
-    { "Minutes", min },
-    { "Seconds", sec },
+  Telemetry datat[data_items] = {
+    { "min", min },
+    { "sec", sec },
     { "task", task },
     };
+  Serial.print("Sending info... min: "); Serial.print(min); Serial.print(" sec: "); Serial.print(sec); Serial.print(" task: "); Serial.println(task);
 
-  tb.sendTelemetry(data, data_items);
+  tb.sendTelemetry(datat, data_items);
 
   // Process messages
   tb.loop();
 }
 
-void sendInfo_final(int av, int pr, int total_h, int total_min) {
+void sendInfo_final(int task_id, int av, int pr, int total_h, int total_min) {
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Not connected to WiFi... reconnecting");
@@ -77,16 +77,28 @@ void sendInfo_final(int av, int pr, int total_h, int total_min) {
   }
   // Reconnect to ThingsBoard, if needed
   connectTB();
-
-  const int data_items = 4;
-  Telemetry data[data_items] = {
-    { "Average", av },
-    { "Personal Record", pr },
-    { "total_h", total_h },
-    { "total_min", total_min },
+  const int data_items1 = 3;
+  //task = 0 to show on things board that we are in break
+  Telemetry datat[data_items1] = {
+    { "av", av },
+    { "pr", pr },
+    { "taskid", task_id }, 
+    
     };
+  // total seconds?
+  // { "totals", 43 },
+  const int data_items2 = 3;
+  //taskid indicates task related to this data
+  Telemetry datatt[data_items2] = {
+    { "totalh", total_h },
+    { "totalm", total_min },
+    { "task", 0 }, 
+    };
+  Serial.print("Sending final info... av: "); Serial.print(av); Serial.print(" pr: "); Serial.print(pr); Serial.print(" taskid: "); Serial.print(task_id);  Serial.print(" total h: "); 
+  Serial.print(total_h); Serial.print(" total m: "); Serial.print(total_min); Serial.print(" task: "); Serial.println("0");
+  tb.sendTelemetry(datat, data_items1);
+  tb.sendTelemetry(datatt, data_items2);
 
-  tb.sendTelemetry(data, data_items);
 
   // Process messages
   tb.loop();

@@ -12,6 +12,8 @@
 #define MIN_TIME 30             //s
 #define DISTANCE_THRESHOLD 800  //mm -> 80cm
 
+int distance;
+
 //SFEVL53L1X distanceSensor();
 //Uncomment the following line to use the optional shutdown and interrupt pins.
 SFEVL53L1X distanceSensor(Wire, SHUTDOWN_PIN, INTERRUPT_PIN);
@@ -22,7 +24,7 @@ void setup()
   delay(4000); 
   Serial.println("start");
   //shutdown e output, interrupt e input
-  Wire.begin(SDA, SCL); //SDA SCL
+  Wire.begin(SDA_PIN, SCL_PIN); //SDA SCL
 
   pinMode(SHUTDOWN_PIN, OUTPUT);
   digitalWrite(SHUTDOWN_PIN, HIGH);
@@ -38,7 +40,7 @@ void setup()
   }
   Serial.println("Sensor online!");
 
-  //initDistSensor();
+  initDistSensor();
 
   //i2c_address();
 }
@@ -91,10 +93,12 @@ void change_dist(int distance){
 
 void loop()
 {
-  readToF();
+  distance = readToF();
+  change_dist(distance);
+
 }
 
-void readToF(){
+int readToF(){
   distanceSensor.startRanging(); //Write configuration bytes to initiate measurement
   while (!distanceSensor.checkForDataReady())
   {
@@ -107,13 +111,9 @@ void readToF(){
   Serial.print("Distance(mm): ");
   Serial.print(distance);
 
-  float distanceInches = distance * 0.0393701;
-  float distanceFeet = distanceInches / 12.0;
-
-  Serial.print("\tDistance(ft): ");
-  Serial.print(distanceFeet, 2);
-
   Serial.println();
+
+  return distance;
 }
 
 void i2c_address() {
