@@ -39,6 +39,7 @@ void setup()
   delay(3000);
   Serial.println("yo");
   Wire.setPins(SDA_PIN, SCL_PIN);
+  Wire.begin();
   Serial.begin(115200);
   Serial.println("VL53L1X Qwiic Test");
 
@@ -61,12 +62,17 @@ void initDistSensor() {
            
 }
 
-void loop(void)
+void loop()
 {
-
-
+  distanceSensor.startRanging(); //Write configuration bytes to initiate measurement
+  while (!distanceSensor.checkForDataReady())
+  {
+    delay(1);
+  }
   int distance = distanceSensor.getDistance(); //Get the result of the measurement from the sensor
-
+  distanceSensor.clearInterrupt();
+  distanceSensor.stopRanging();
+  
   Serial.print("Distance(mm): ");
   Serial.print(distance);
   Serial.println();

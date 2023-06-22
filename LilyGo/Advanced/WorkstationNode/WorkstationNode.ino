@@ -57,7 +57,6 @@ struct task {
   float av; //in seconds (ex: 124)
   int pr;
 };
-int av; // average in integer
 
 task data[5]; //4 structs of task
 //CHANGE ACCORDING TO TASK
@@ -160,7 +159,7 @@ void reset() {
   tft.drawString(data[id].task_name, 75, 7);
 
   tft.drawString("MEDIA:", 210, 7);
-  av = round(data[id].av);
+  int av = round(data[id].av);
   int av_m = get_min(av);
   int av_s = get_sec(av);
   String av_m_ = time_to_string(av_m);
@@ -306,7 +305,7 @@ void break_screen(){
     yellow = read_button(yellow, YELLOW_BUTTON);
     if (green.clicked){
       if (first == 0){
-        sendInfo(break_m,break_s,0); //tell tb break is over
+        sendInfo_TASK(break_m,break_s,0); //tell tb break is over
       }
       //restart task identification
       Serial.println("green");
@@ -437,7 +436,7 @@ void average_func(){
 
   }
   Serial.print(data[id].av);
-  av = round(data[id].av);
+  int av = round(data[id].av);
   Serial.print(" --> "); Serial.println(av);
   //just for display of average
   int av_m = get_min(data[id].av);
@@ -558,7 +557,7 @@ void buttons() {
       score_time(); 
       average_func();
 
-      sendInfo(laptime_m, laptime_s, id);
+      sendInfo_TASK(laptime_m, laptime_s, id);
       tft.fillRect(10, 70, 120, 60, TFT_BLACK);
       s = 0;
       m = 0;
@@ -573,7 +572,7 @@ void buttons() {
   if (yellow.clicked) {
     if (pom2 == 0){
       Serial.print("Sending final info... av: "); Serial.print(round(data[id].av)); Serial.print(" pr: "); Serial.print(data[id].pr); Serial.print(" total h: "); Serial.print(tt_h); Serial.print(" total m: "); Serial.print(tt_m); Serial.print(" total s: "); Serial.println(tt_s);
-      sendInfo_final(id, round(data[id].av), data[id].pr, tt_h, tt_m);
+      sendInfo_final_TASK(id, round(data[id].av), data[id].pr, tt_h, tt_m);
       id = -1;
       waitfortask_screen();
       pom2 = 1;
