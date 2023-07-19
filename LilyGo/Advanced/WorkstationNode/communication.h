@@ -39,16 +39,18 @@ void connectTB(){
     Serial.println("Connecting to The ThingsBoard");
     if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
       Serial.println("Failed to connect");
+      //screen wi fi
       delay(500);  //return;
     }
   }
   Serial.println("Connected to ThingsBoard");
 }
 
-void sendInfo_TASK(int min, int sec, int task) {
+void sendInfo_task(int min, int sec, int task) {
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Not connected to WiFi... reconnecting");
+    // screen wi fi
     reconnect();
     delay(500);  //return;
   }
@@ -68,7 +70,7 @@ void sendInfo_TASK(int min, int sec, int task) {
   tb.loop();
 }
 
-void sendInfo_final_TASK(int task_id, int av, int pr, int total_h, int total_min) {
+void sendInfo_final_task(int task_id, int av, int pr, int total_h, int total_min) {
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Not connected to WiFi... reconnecting");
@@ -78,7 +80,7 @@ void sendInfo_final_TASK(int task_id, int av, int pr, int total_h, int total_min
   // Reconnect to ThingsBoard, if needed
   connectTB();
   const int data_items1 = 3;
-  //task = 0 to show on things board that we are in break
+  //taskid indicates task related to this data
   Telemetry datat[data_items1] = {
     { "av", av },
     { "pr", pr },
@@ -88,17 +90,39 @@ void sendInfo_final_TASK(int task_id, int av, int pr, int total_h, int total_min
   // total seconds?
   // { "totals", 43 },
   const int data_items2 = 3;
-  //taskid indicates task related to this data
+  //task = 0 to show on things board that we are in break
   Telemetry datatt[data_items2] = {
     { "totalh", total_h },
     { "totalm", total_min },
     { "task", 0 }, 
     };
   Serial.print("Sending final info... av: "); Serial.print(av); Serial.print(" pr: "); Serial.print(pr); Serial.print(" taskid: "); Serial.print(task_id);  Serial.print(" total h: "); 
-  Serial.print(total_h); Serial.print(" total m: "); Serial.print(total_min); Serial.print(" task: "); Serial.println("0");
+  Serial.print(total_h); Serial.print(" total m: "); Serial.print(total_min); Serial.print(" break: ");
   tb.sendTelemetry(datat, data_items1);
   tb.sendTelemetry(datatt, data_items2);
 
+
+  // Process messages
+  tb.loop();
+}
+
+void sendInfo_tof(int dist, int stat) {
+  // Reconnect to WiFi, if needed
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Not connected to WiFi... reconnecting");
+    reconnect();
+    delay(500);  //return;
+  }
+  // Reconnect to ThingsBoard, if needed
+  connectTB();
+  const int data_items = 2;
+  Telemetry datat[data_items] = {
+    { "distance", dist },
+    { "stat", stat },
+    };
+  Serial.print("Sending info... dist: "); Serial.print(dist); Serial.print(" stat: "); Serial.println(stat);
+
+  tb.sendTelemetry(datat, data_items);
 
   // Process messages
   tb.loop();

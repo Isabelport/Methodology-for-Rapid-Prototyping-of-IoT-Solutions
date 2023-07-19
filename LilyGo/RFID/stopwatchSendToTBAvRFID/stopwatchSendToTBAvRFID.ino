@@ -21,7 +21,7 @@ TFT_eSPI tft = TFT_eSPI();
 
 //RFID Constants
 #define SS_PIN 10
-#define RST_PIN 18
+#define RST_PIN 3
 #define MISO_PIN 13
 #define MOSI_PIN 11
 #define SCK_PIN 12

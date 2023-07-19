@@ -1,5 +1,5 @@
-const int GREEN_BUTTON = 16;
-const int YELLOW_BUTTON = 21;
+const int GREEN_BUTTON = 0; //0 sim
+const int YELLOW_BUTTON = 14;
 
 struct button{
   int buttonState;

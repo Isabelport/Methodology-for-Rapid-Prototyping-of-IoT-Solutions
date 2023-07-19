@@ -21,7 +21,8 @@
 
 //BLE Reveiver Device Token
 //#define TOKEN "xBKIxRmBAR9QzLdDCXGz" //esp1
-#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
+//#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
+#define TOKEN "jaJv4liL5EJsUDLj9MWt" //esp3
 
 
 /***** BLE System UUID *****/

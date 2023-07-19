@@ -19,4 +19,5 @@
 #define THINGSBOARD_SERVER  "iot.istartlab.tecnico.ulisboa.pt"
 
 //ESP32 Token
-#define TOKEN "Xsh1AGQsAperP4vb0Q7M" //esp1
+//#define TOKEN "Xsh1AGQsAperP4vb0Q7M" //esp1
+#define TOKEN "qsNT0ImsJmL6yhuyzmXE" //esp2
