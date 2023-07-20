@@ -21,7 +21,7 @@ button yellow = {HIGH, HIGH, 0, 0, 1, 0};
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 
-button read_button(button any, int pin){
+button readButton(button any, int pin){
   any.clicked = 0;
   int reading = digitalRead(pin);
   // check to see if you just pressed the button

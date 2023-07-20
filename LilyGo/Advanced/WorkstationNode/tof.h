@@ -72,4 +72,22 @@ bool checkDistance(int distance){
   
 }
 
+void checkAndSendDistance(){
+    int distance = getDistance();
+    if (distance != -1) {
+      int to_send = checkDistance(distance);
+      if (to_send) {
+        last_send = millis();
+        last_distance = distance;
+        if (distance <= DISTANCE_THRESHOLD) {
+          state = 1;
+        } else {
+          state = 0;
+        }
+        Serial.print("Sending distance:");
+        Serial.println(distance);
+        sendInfo_tof(distance, state);
+      }
+    }
+}
 
