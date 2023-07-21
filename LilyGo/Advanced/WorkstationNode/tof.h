@@ -24,13 +24,20 @@ bool state = 0; //NEAR 1 AWAY 0º
 SFEVL53L1X distanceSensor(Wire, SHUTDOWN_PIN, INTERRUPT_PIN);
 
 void initDistSensor() {
-  while (distanceSensor.begin() != 0) { //Begin returns 0 on a good init
+  if (distanceSensor.begin() != 0){  //Begin returns 0 on a good init
     Serial.println("ToF failed to begin. Please check wiring. Freezing...");
-    delay(500);
+    while(distanceSensor.begin()){
+      Serial.println("ToF failed to begin. Please check wiring. Freezing...");
+      tft.drawString("Verificar ToF", 10, 80, 4);
+      delay(500);
+    }
+
   }
-  
-  Serial.println("ToF online!");
-  
+  else{
+    Serial.println("ToF ready!");
+    tft.drawString("ToF conectado", 10, 80, 4);
+    delay(2000);
+  }
   distanceSensor.setDistanceModeLong();  
   distanceSensor.setIntermeasurementPeriod(1000); //was 8000
   
@@ -50,9 +57,9 @@ int getDistance(){
   int distance = distanceSensor.getDistance(); //Get the result of the measurement from the sensor
   distanceSensor.clearInterrupt();
   //distanceSensor.stopRanging();
-  Serial.print("Distance(mm): ");
-  Serial.print(distance);
-  Serial.println();
+  //Serial.print("Distance(mm): ");
+  //Serial.print(distance);
+  //Serial.println();
 
   return distance;
   

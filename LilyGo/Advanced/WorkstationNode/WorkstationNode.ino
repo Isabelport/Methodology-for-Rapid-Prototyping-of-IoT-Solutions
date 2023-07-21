@@ -61,28 +61,27 @@ void setup() {
   tft.fillScreen(TFT_BLACK);
   Serial.begin(115200);
   Serial.println("TFT ready");
+  ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
+  ledcAttachPin(TFT_BL, pwmLedChannelTFT);
+  ledcWrite(pwmLedChannelTFT, 67);
   tft.setSwapBytes(true);
+  
   //Initialize buttons
-
   pinMode(GREEN_BUTTON, INPUT_PULLUP);
   pinMode(YELLOW_BUTTON, INPUT_PULLUP);
 
-  tft.drawString("Por favor ligar-se ao Wi-Fi.", 10, 70, 4);
-
   //Initialize wifi and TB
+  tft.drawString("Por favor ligar-se ao Wi-Fi.", 10, 70, 4);
   WiFi.begin(STA_SSID, STA_PASS);
   InitWiFi();
   connectTB();
+  tft.fillScreen(TFT_BLACK);
 
   //Initialize RFID
   Serial.println("Initialize RFID");
   SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);  // CHANGE DEFAULT PINS
-  rfid.PCD_Init();
-  Serial.print("Reader :");
-  rfid.PCD_DumpVersionToSerial();
+  initRFIDSensor();
 
-  Serial.println("RFID ready");
-  rfidSettings();
   //Initialize ToF
   Serial.println("Initialize ToF");
   Wire.setPins(SDA_PIN, SCL_PIN);
@@ -91,9 +90,10 @@ void setup() {
   digitalWrite(SHUTDOWN_PIN, HIGH);
   pinMode(INTERRUPT_PIN, INPUT_PULLUP);
   initDistSensor();
-  Serial.println("ToF ready");
+
   assignTaskValues(data);
-  Serial.println("Ready");
+  Serial.println("Ready! Let's start!");
+
   waitForCard_screen("employee");
 }
 
@@ -103,20 +103,21 @@ void reset() {
   tft.fillScreen(TFT_BLACK);
   tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
 
-  tft.drawString("TAREFA:", 7, 22);
-  tft.drawString(data[task_id].task_name, 72, 22);
+  tft.setTextColor(TFT_WHITE);
+  tft.drawString("TAREFA:", 0, 5);
+  tft.drawString(data[task_id].task_name, 67, 5);
 
-  tft.drawString("MEDIA:", 200, 22);
+  tft.drawString("MEDIA:", 210, 5);
   int av = round(data[task_id].av);
   int av_m = getMin(av);
   int av_s = getSec(av);
   String av_m_ = timeToString(av_m);
   String av_s_ = timeToString(av_s);
   if (av != 0)
-    tft.drawString(av_m_ + ":" + av_s_, 255, 22);
+    tft.drawString(av_m_ + ":" + av_s_, 265, 5);
 
-  tft.drawLine(195, 45, 195, 200, color_yellow);
-  tft.drawLine(0, 45, 500, 45, color_yellow);
+  tft.drawLine(200, 25, 200, 200, color_yellow);
+  tft.drawLine(0, 25, 500, 25, color_yellow);
 
   ss = 0;
   s = 0;
@@ -135,28 +136,32 @@ void reset() {
 
 void waitForCard_screen(String mode) {
   tft.fillScreen(TFT_BLACK);
+
   if (mode == "task") {
     Serial.println("Wait for task Screen");
     if (first == 0) {
-      tft.drawString("Pausa", 10, 45, 4);
-      tft.drawString("Para comecar", 10, 70, 4);
-      tft.drawString("passar cartao da tarefa.", 10, 95, 4);
+      tft.setTextColor(TFT_WHITE);
+      tft.drawString("Pausa", 5, 45, 4);
+      tft.drawString("Para comecar", 5, 70, 4);
+      tft.drawString("passar cartao da tarefa.", 5, 95, 4);
     } else {
-      tft.drawString("Para comecar", 10, 60, 4);
-      tft.drawString("passar cartao da tarefa.", 10, 85, 4);
+      tft.setTextColor(TFT_WHITE);
+      tft.drawString("Para comecar", 5, 60, 4);
+      tft.drawString("passar cartao da tarefa.", 5, 85, 4);
     }
   } else {
     Serial.println("Wait for employee Screen");
     if (first == 0) {
-      tft.drawString("Pausa", 10, 45, 4);
-      tft.drawString("Para continuar", 10, 70, 4);
-      tft.drawString("passar cartao de identificacao.", 10, 95, 4);
+      tft.setTextColor(TFT_WHITE);
+      tft.drawString("Pausa", 5, 45, 4);
+      tft.drawString("Para continuar", 5, 70, 4);
+      tft.drawString("passar cartao de identific.", 5, 95, 4);
     } else {
-      tft.drawString("Para continuar", 10, 60, 4);
-      tft.drawString("passar cartao de identificacao.", 10, 85, 4);
+      tft.setTextColor(TFT_WHITE);
+      tft.drawString("Para continuar", 5, 60, 4);
+      tft.drawString("passar cartao de identific.", 5, 85, 4);
     }
   }
-
 
   while (1) {
 
@@ -192,21 +197,19 @@ void waitForCard_screen(String mode) {
     //still checking distance while in break
     checkAndSendDistance();
 
-
     if (mode == "task") {
       if (STATION == 1)
         task_id = readRFID("task_stat1");
       else
         task_id = readRFID("task_stat2");
       if (task_id != -1) {
-        Serial.println("Card found");
         break_screen("task");
         break;
       }
     } else {
       emp_id = readRFID("employee");
+      //emp_id--;
       if (emp_id != -1) {
-        Serial.println("Card found");
         break_screen("employee");
         break;
       }
@@ -229,125 +232,41 @@ void waitForCard_screen(String mode) {
       pom2 = 0;
   }
 }
-//screen wait for task
-/*
-  void waitfortask_screen() {
-    tft.fillScreen(TFT_BLACK);
-    Serial.println("Wait for task Screen");
-    if (first == 0) {
-      tft.drawString("Pausa", 10, 45, 4);
-      tft.drawString("Para comecar", 10, 70, 4);
-      tft.drawString("passar cartao da tarefa.", 10, 95, 4);
-    } else {
-      tft.drawString("Para comecar", 10, 60, 4);
-      tft.drawString("passar cartao da tarefa.", 10, 85, 4);
-    }
-    while (1) {
-
-      if (first == 0) {
-        ss1 = millis();
-
-        // MILLISECONDS
-        if (ss1 > ss2 + 9) {  //counting milliseconds for break time
-          ss2 = ss1;
-          break_ss++;
-        }
-
-        // SECONDS
-        //since the function of readrfid takes a part of the processing, the seconds seem "slower",
-        //so we assumed that 40ms are 1 second, which in the end actually look like one second
-        if (break_ss > 40) {  //counting "seconds" for break time
-          Serial.print("Break time: ");
-          Serial.print(break_m);
-          Serial.print(":");
-          Serial.println(break_s);
-          break_s++;
-          break_ss = 0;
-        }
-
-        // MINUTES
-        if (break_s > 59) {  //counting minutes for break time
-          break_s = 0;
-          break_m++;
-        }
-      }
-
-      //TOF
-      //still checking distance while in break
-      int distance = getDistance();
-      if (distance != -1) {
-        int to_send = checkDistance(distance);
-        if (to_send) {
-          last_send = millis();
-          last_distance = distance;
-          if (distance <= DISTANCE_THRESHOLD) {
-            state = 1;
-          } else {
-            state = 0;
-          }
-          Serial.print("Sending distance:");
-          Serial.println(distance);
-
-          sendInfo_tof(distance, state);
-        }
-      }
-
-
-      readRFID();
-
-      if (task_id != -1) {
-        Serial.println("Card found");
-        break_screen();
-        break;
-      }
-      green = readButton(green, GREEN_BUTTON);
-      yellow = readButton(yellow, YELLOW_BUTTON);
-      if (green.clicked) {
-        Serial.println("green");
-        if (pom == 0) {
-          pom = 1;
-        }
-      } else {
-        pom = 0;
-      }
-      if (yellow.clicked) {
-        Serial.println("yellow");
-        if (pom2 == 0) {
-          ;
-          pom2 = 1;
-        }
-      } else {
-        pom2 = 0;
-      }
-    }
-  }
-*/
 
 void break_screen(String mode) {
-  
+
+  Serial.println("hello");
   tft.fillScreen(TFT_BLACK);
-
+  
   if (mode == "employee") {
+
+    tft.setTextColor(TFT_WHITE);
     Serial.println("Break screen employee");
-    tft.drawString("Operador: ", 10, 20, 4);
-    tft.drawString(employee_name[emp_id], 160, 20, 4);
+    Serial.println(employee_name[emp_id]);
+    tft.drawString("Operador: ", 5, 20, 4);
+    tft.drawString(employee_name[emp_id], 125, 20, 4);
 
-    tft.drawString("Clicar no botao amarelo", 10, 50, 4);
-    tft.drawString("para trocar de operador", 10, 75, 4);
+    tft.setTextColor(TFT_CYAN);
+    tft.drawString("Clicar no botao amarelo", 5, 50, 4);
+    tft.drawString("para trocar de operador", 5, 75, 4);
 
-    tft.drawString("ou no botao verde", 10, 105, 4);
-    tft.drawString("para continuar", 10, 130, 4);
+    tft.setTextColor(TFT_DARKGREEN);
+    tft.drawString("ou no botao verde", 5, 105, 4);
+    tft.drawString("para continuar", 5, 130, 4);
 
   } else {
-    Serial.println("Break screen task");    
-    tft.drawString("Tarefa atual: ", 10, 20, 4);
-    tft.drawString(data[task_id].task_name, 160, 20, 4);
+    tft.setTextColor(TFT_WHITE);
+    Serial.println("Break screen task");
+    tft.drawString("Tarefa: ", 5, 20, 4);
+    tft.drawString(data[task_id].task_name, 100, 20, 4);
 
-    tft.drawString("Clicar no botao amarelo", 10, 50, 4);
-    tft.drawString("para trocar de tarefa", 10, 75, 4);
+    tft.setTextColor(TFT_CYAN);
+    tft.drawString("Clicar no botao amarelo", 5, 50, 4);
+    tft.drawString("para trocar de tarefa", 5, 75, 4);
 
-    tft.drawString("ou no botao verde", 10, 105, 4);
-    tft.drawString("para comecar", 10, 130, 4);
+    tft.setTextColor(TFT_GREEN);
+    tft.drawString("ou no botao verde", 5, 105, 4);
+    tft.drawString("para comecar", 5, 130, 4);
   }
 
   while (1) {
@@ -448,15 +367,17 @@ void loop() {
   tt_current = tt_hours + ":" + tt_minutes + ":" + tt_seconds;
   if (current != temp) {
     tft.setFreeFont(&DSEG7_Classic_Regular_50);
-    tft.drawString(current, 10, 85);
+    tft.setTextColor(TFT_WHITE);
+    tft.drawString(current, 5, 70);
+    Serial.println(current);
     temp = current;
   }
 
   if (tt_current != tt_temp) {
     tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
-    tft.drawString("TOTAL:", 10, 145);
-    //tft.drawString(tt_current, 75, 130);
-    tft.drawString(tt_hours + ":" + tt_minutes, 75, 145);
+    tft.drawString("TOTAL:", 5, 130);
+    tft.fillRect(75, 140, 25, 10, TFT_BLACK);
+    tft.drawString(tt_hours + ":" + tt_minutes, 70, 130);
     tt_temp = tt_current;
   }
 
@@ -569,9 +490,9 @@ void averageFunc() {
   String av_m_ = timeToString(av_m);
   String av_s_ = timeToString(av_s);
 
-  tft.fillRect(250, 7, 80, 20, TFT_BLACK);
+  tft.fillRect(265, 5, 40, 15, TFT_BLACK);
   tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
-  tft.drawString(av_m_ + ":" + av_s_, 255, 22);
+  tft.drawString(av_m_ + ":" + av_s_, 265, 5);
 }
 
 bool personal_record(int laptime) {
@@ -605,15 +526,15 @@ void scoreTime() {
   String diff_m_ = timeToString(diff_m);
   String diff_s_ = timeToString(diff_s);
 
-  int x_image = 235;
-  int y_image = 80;
-  int x_text = 210;
-  int y_text = 120;
+  int x_image = 250;
+  int y_image = 72;
+  int x_text = 225;
+  int y_text = 112;
 
+  tft.fillRect(x_text, y_text, 40, 100, TFT_BLACK);
   //PERSONAL RECORD
   if (personal_record(laptime)) {
     tft.pushImage(x_image, y_image, 32, 32, star);
-    tft.fillRect(x_text, y_text, 35, 100, TFT_BLACK);
     if (minus) tft.drawString("-" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
     else tft.drawString("+" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
   }
@@ -621,21 +542,18 @@ void scoreTime() {
   else if (diff < -threshold) {  //if difference is less than -threshold than there is big decrease of the laptime in relation to average (better)
     //Serial.println("down");
     tft.pushImage(x_image, y_image, 32, 32, down);
-    tft.fillRect(x_text, y_text, 35, 100, TFT_BLACK);
     tft.drawString("-" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
   }
   //INCREASE IN TIME -> UP
   else if (diff > threshold) {  //if difference is bigger than threshold than there is big increase of the laptime in relation to average (worse)
     //Serial.println("up");
     tft.pushImage(x_image, y_image, 32, 32, up);
-    tft.fillRect(x_text, y_text, 35, 100, TFT_BLACK);
     tft.drawString("+" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
   }
   //EQUAL
   else {  // if difference is between -threshold and threshold, difference is not considerably big
     //Serial.println("equal");
     tft.pushImage(x_image, y_image, 32, 32, equal);  //32 32
-    tft.fillRect(x_text, y_text, 35, 100, TFT_BLACK);
     if (minus) tft.drawString("-" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
     else tft.drawString("+" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
   }
@@ -692,7 +610,7 @@ void buttons() {
 
       sendInfo_final_task(task_id, round(data[task_id].av), data[task_id].pr, tt_h, tt_m);
       task_id = -1;
-      waitForCard_screen("employee");
+      waitForCard_screen("task");
       pom2 = 1;
     }
   } else {

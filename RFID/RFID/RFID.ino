@@ -37,27 +37,25 @@ void setup() {
   Serial.println("RFID ready");
   rfid_settings();
   Serial.println("Please pass employee card");
-
 }
 
 void loop() {
-  readRFID("task_stat1");
+  int id = readRFID("employee");
   //delay(10000);
   //Serial.println("Please pass task card");
   //readRFID("task");
   //delay(10000);
-
 }
 
 //6 tasks of an rfid number of size 4, number of tasks can be adapted
 //attention! task 0 is break
 const int num_of_tasks = 6;
 int rfid_task_stat1[num_of_tasks][4] = { { 41, 159, 54, 52 },     //1
-                                   { 114, 115, 192, 75 },   //2
-                                   { 225, 88, 162, 27 },    //3
-                                   { 227, 24, 55, 52 },     //4
-                                   { 147, 140, 181, 75 },   //5
-                                   { 50, 221, 196, 77 } };  //6
+                                         { 114, 115, 192, 75 },   //2
+                                         { 225, 88, 162, 27 },    //3
+                                         { 227, 24, 55, 52 },     //4
+                                         { 147, 140, 181, 75 },   //5
+                                         { 50, 221, 196, 77 } };  //6
 
 int rfid_task_stat2[num_of_tasks][4] = { { 19, 163, 84, 17 },      //1
                                          { 225, 143, 202, 27 },    //2
@@ -85,40 +83,40 @@ int rfid_employee[num_of_employees][4] = { { 19, 163, 84, 17 },      //1
 
 //gabarit is a working tray for the production line
 const int num_of_gabarits = 24;
-int rfid_gabarit[num_of_gabarits][4] = { { 19, 163, 84, 17 },      //1
-                                          { 225, 143, 202, 27 },    //2
-                                          { 82, 150, 241, 77 },     //3
-                                          { 227, 24, 55, 52 },      //4
-                                          { 147, 140, 181, 75 },    //5
-                                          { 50, 221, 196, 77 },     //6
-                                          { 41, 159, 54, 52 },      //7
-                                          { 114, 115, 192, 75 },    //8
-                                          { 225, 88, 162, 27 },     //9
-                                          { 227, 24, 55, 52 },      //10
-                                          { 147, 140, 181, 75 },    //11
-                                          { 50, 221, 196, 77 },     //12
-                                          { 41, 159, 54, 52 },      //13
-                                          { 114, 115, 192, 75 },    //14
-                                          { 227, 24, 55, 52 },      //15
-                                          { 147, 140, 181, 75 },    //16
-                                          { 50, 221, 196, 77 },     //17
-                                          { 41, 159, 54, 52 },      //18
-                                          { 114, 115, 192, 75 },    //19
-                                          { 225, 88, 162, 27 },     //20
-                                          { 227, 24, 55, 52 },      //21 //FODIDO MUDAR!!!!!!
-                                          { 147, 140, 181, 75 },    //22
-                                          { 50, 221, 196, 77 },     //23
-                                          { 41, 159, 54, 52 }};     //24
+int rfid_gabarit[num_of_gabarits][4] = { { 179, 195, 96, 014 },  //1 NAOOO
+                                         { 81, 41, 36, 71 },     //2 NAOOOOO
+                                         { 192, 243, 214, 29 },  //3
+                                         { 50, 220, 19, 76 },    //4
+                                         { 162, 148, 223, 29 },  //5
+                                         { 81, 41, 36, 71 },     //6
+                                         { 163, 141, 244, 75 },  //7
+                                         { 97, 63, 200, 69 },    //8
+                                         { 146, 232, 98, 29 },   //9
+                                         { 163, 180, 88, 50 },   //10
+                                         { 242, 203, 81, 76 },   //11
+                                         { 163, 163, 30, 77 },   //12
+                                         { 147, 231, 204, 77 },  //13
+                                         { 147, 123, 128, 75 },  //14
+                                         { 225, 200, 28, 27 },   //15
+                                         { 146, 193, 146, 29 },  //16
+                                         { 146, 193, 146, 29 },  //17
+                                         { 131, 156, 84, 75 },   //18
+                                         { 241, 55, 47, 27 },    //19
+                                         { 192, 229, 232, 29 },  //20
+                                         { 227, 24, 55, 52 },    //21 NAOOOO
+                                         { 162, 89, 115, 29 },   //22
+                                         { 16, 166, 117, 81 },   //23
+                                         { 192, 87, 59, 29 } };  //24
 
 
-int getCardId(byte* buffer, int size, String mode) { //mode = task_stat1, task_stat2 or employee
+int getCardId(byte* buffer, int size, String mode) {  //mode = task_stat1, task_stat2 or employee
   String buffer_str = "";
   int card_id = -1;
   int isequal = 0;  //aux variable to compare rfid numbers
   int num_of_cards = 0;
   if ((mode == "task_stat1") || (mode == "task_stat2"))
     num_of_cards = num_of_tasks;
-  else // mode == "employee"
+  else  // mode == "employee"
     num_of_cards = num_of_employees;
 
   Serial.println("curr_rfid");
@@ -127,7 +125,6 @@ int getCardId(byte* buffer, int size, String mode) { //mode = task_stat1, task_s
   for (int i = 0; i < size; i++) {
     buffer_str = String(buffer[i]);  //buffer[i] is byte type, need to pass first to a string
     curr_rfid[i] = buffer_str.toInt();
-    Serial.println(curr_rfid[i]);
   }
 
   for (int i = 0; i < num_of_cards; i++) {
@@ -152,7 +149,7 @@ int getCardId(byte* buffer, int size, String mode) { //mode = task_stat1, task_s
 bool compareRfid(int rfid1[], int rfid2[], int size) {
   int equal = 0;
 
-  
+
   for (int i = 0; i < size; i++) {
     if (rfid1[i] == rfid2[i])
       equal++;
@@ -168,11 +165,64 @@ void printDec(byte* buffer, byte bufferSize) {
   for (byte i = 0; i < bufferSize; i++) {
     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
     Serial.print(buffer[i], DEC);
+    Serial.print(", ");
   }
   Serial.println();
 }
 
-void readRFID(String mode) { //mode 
+int readRFID(String mode) {  //mode
+  ////Read RFID card
+  int id = -1;
+  for (byte i = 0; i < 6; i++) {
+    key.keyByte[i] = 0xFF;
+  }
+  // Look for new cards
+  if (!rfid.PICC_IsNewCardPresent())
+    return -1;
+  // Verify if the NUID has been readed
+  if (!rfid.PICC_ReadCardSerial())
+    return -1;
+  // Store NUID into nuidPICC array
+  Serial.println("ohhey");
+  for (byte i = 0; i < 4; i++) {
+    nuidPICC[i] = rfid.uid.uidByte[i];
+  }
+  Serial.print("RFID In dec: ");
+  printDec(rfid.uid.uidByte, rfid.uid.size);
+
+  if (mode == "task_stat1") {
+    id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
+    if (id == -1) {
+      Serial.println("Task not found");
+    } else {
+      Serial.print("Task being performed: ");
+      Serial.println(id);
+    }
+  } else if (mode == "task_stat2") {
+    id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
+    if (id == -1) {
+      Serial.println("Task not found");
+    } else {
+      Serial.print("Task being performed: ");
+      Serial.println(id);
+    }
+  } else if (mode == "employee") {
+    id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
+    if (id == -1) {
+      Serial.println("Employee not found");
+    } else {
+      Serial.print("Employee working: ");
+      Serial.println(id);
+    }
+  }
+  // Halt PICC
+  rfid.PICC_HaltA();
+  // Stop encryption on PCD
+  rfid.PCD_StopCrypto1();
+  return id;
+}
+
+void readRFoD(String mode) {  //mode
   ////Read RFID card
   for (byte i = 0; i < 6; i++) {
     key.keyByte[i] = 0xFF;
@@ -195,17 +245,16 @@ void readRFID(String mode) { //mode
     if (id == -1) {
       Serial.println("Task not found");
     } else {
-    Serial.print("Task being performed: ");
-    Serial.println(id);
+      Serial.print("Task being performed: ");
+      Serial.println(id);
     }
-  }
-  else if (mode == "task_stat2") {
+  } else if (mode == "task_stat2") {
     id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
     if (id == -1) {
       Serial.println("Task not found");
     } else {
-    Serial.print("Task being performed: ");
-    Serial.println(id);
+      Serial.print("Task being performed: ");
+      Serial.println(id);
     }
   } else if (mode == "employee") {
     id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
@@ -221,4 +270,3 @@ void readRFID(String mode) { //mode
   // Stop encryption on PCD
   rfid.PCD_StopCrypto1();
 }
-
