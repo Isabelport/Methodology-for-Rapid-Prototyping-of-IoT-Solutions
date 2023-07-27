@@ -7,8 +7,9 @@ WiFiClient espclient; //espclient
 ThingsBoard tb(espclient); //espclient
 // the Wifi radio's status
 int status = WL_IDLE_STATUS;
-int prev_task = 0;
+int prev_task = -1;
 int count = 0;
+
 
 void InitWiFi() {
   Serial.println("Connecting to AP ...");
@@ -49,14 +50,16 @@ void connectTB(){
 
 void sendInfo_task(int sec, int task, int emp_id) {
   //first task sent is 0
-  /*
-  if (task == prev_task)
+  
+  if ((task == prev_task) && (task != 0)){
     count ++;
+  }
   else {
     prev_task = task;
-    count = 1;
+    count = 0;
   }
-  Serial.print("attention pickpocket "); Serial.println(count);*/
+  Serial.print("count:"); 
+  Serial.println(count);
 
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {
@@ -74,7 +77,7 @@ void sendInfo_task(int sec, int task, int emp_id) {
     { "task", task },
     };
   Serial.print("Sending info... min: "); Serial.print(sec/60); Serial.print(" sec: "); Serial.print(sec%60); Serial.print(" task: "); 
-  Serial.println(task); Serial.print(" emp: "); Serial.println(emp_id);
+  Serial.print(task); Serial.print(" emp: "); Serial.println(emp_id);
 
   tb.sendTelemetry(datat, data_items);
 
@@ -83,6 +86,7 @@ void sendInfo_task(int sec, int task, int emp_id) {
 }
 
 void sendInfo_final_task(int task_id, int av, int pr, int total_min, int emp_id) {
+  
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {
     Serial.print("Not connected to WiFi... reconnecting");
@@ -91,6 +95,7 @@ void sendInfo_final_task(int task_id, int av, int pr, int total_min, int emp_id)
   }
   // Reconnect to ThingsBoard, if needed
   connectTB();
+  //was not able to send more than 3 infos at a time, if possible change this
   const int data_items1 = 3;
   //taskid indicates task related to this data
   Telemetry datat[data_items1] = {
@@ -98,25 +103,36 @@ void sendInfo_final_task(int task_id, int av, int pr, int total_min, int emp_id)
     { "pr", pr },
     { "taskid", task_id }, 
     };
-  // total seconds?
   const int data_items2 = 3;
     //task = 0 to show on things board that we are in break
   Telemetry datatt[data_items2] = {
     { "totalm", total_min },
     { "emp_id", emp_id },
-    { "task", 0 }, 
-    //{ "count", count },
+    { "count", count }, 
+    // { "task", 0 }, 
+  };
+  
+  const int data_items3 = 1;
+    //task = 0 to show on things board that we are in break
+  Telemetry datattt[data_items3] = { 
+    { "count", count },
     };
-  Serial.print("Sending final info... av: "); Serial.print(av); Serial.print(" pr: "); Serial.print(pr); Serial.print(" taskid: "); Serial.print(task_id);  Serial.print(" total h: "); 
-  Serial.print(total_min/60); Serial.print(" total m: "); Serial.println(total_min%60); Serial.print(" emp: "); Serial.println(emp_id); Serial.print(" task: "); Serial.println(0);
+  Serial.print("Sending final info... av: "); Serial.print(av); Serial.print(" pr: "); Serial.print(pr); Serial.print(" taskid: "); Serial.println(task_id);  Serial.print(" total h: "); 
+  Serial.print(total_min/60); Serial.print(" total m: "); Serial.print(total_min%60); Serial.print(" emp: "); Serial.print(emp_id); Serial.print(" final count: "); Serial.print(count);
+  Serial.print(" task: "); Serial.println(0);
   //Serial.print(" break: ");
   tb.sendTelemetry(datat, data_items1);
   tb.sendTelemetry(datatt, data_items2);
+  tb.sendTelemetry(datattt, data_items3);
+  count = 0;
+  prev_task = task_id;
+
 
 
   // Process messages
   tb.loop();
 }
+
 void sendInfo_tof(int dist, int stat, int emp_id) {
   // Reconnect to WiFi, if needed
   while (WiFi.status() != WL_CONNECTED) {

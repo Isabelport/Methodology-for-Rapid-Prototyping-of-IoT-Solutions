@@ -1,9 +1,7 @@
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
 
-//#define implementacao_arquiled
-#define STATION 1  //1 or 2
-
+#define implementation
 
 #include "fonts.h"
 #include "icons.h"
@@ -11,7 +9,6 @@ TFT_eSPI tft = TFT_eSPI();
 #include "rfid.h"
 #include "buttons.h"
 #include "communication.h"
-//#include "laptime.h"
 #include "tof.h"
 
 //screen pins
@@ -61,10 +58,10 @@ void setup() {
   tft.init();
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   tft.fillScreen(TFT_BLACK);
-#ifndef implementacao_arquiled
+#ifndef implementation
   Serial.begin(115200);
-  Serial.println("TFT ready");
 #endif
+  Serial.println("TFT ready");
   ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
   //ledcAttachPin(TFT_BL, pwmLedChannelTFT);
   ledcWrite(pwmLedChannelTFT, 67);
@@ -121,14 +118,12 @@ void reset_screen() {
   tft.setTextColor(color_yellow);
   tft.drawString("OPERADOR:", 0, 5);
   tft.setTextColor(TFT_WHITE);
-  Serial.println(emp_id);
   Serial.println(employee_name[emp_id]);
   tft.drawString(employee_name[emp_id], 95, 5);
 
   tft.setTextColor(color_yellow);
   tft.drawString("TAREFA:", 0, 22);
   tft.setTextColor(TFT_WHITE);
-  Serial.println(task_id);
   Serial.println(data[task_id].task_name);
   tft.drawString(data[task_id].task_name, 67, 22);
 
@@ -174,7 +169,6 @@ void waitForCard_screen(String mode) {
   if (mode == "task") {
     Serial.println("Wait for task Screen");
     tft.setTextColor(color_yellow);
-    Serial.println(emp_id);
     Serial.println(employee_name[emp_id]);
     tft.drawString(employee_name[emp_id], 5, 40, 4);
     tft.setTextColor(TFT_WHITE);
@@ -229,12 +223,6 @@ void waitForCard_screen(String mode) {
 
       if (mode == "task") {
         task_id = readRFID("task");
-        /*
-        //if (STATION == 1)
-          task_id = readRFID("task_stat1");
-        else
-          task_id = readRFID("task_stat2");
-          */
         if (task_id != -1) {
           break_screen("task");
           break;
@@ -280,7 +268,6 @@ void break_screen(String mode) {
   int prev_emp_id = emp_id;
   int prev_task_id = task_id;
   delay(100);
-  Serial.println("hello");
   tft.fillScreen(TFT_BLACK);
   //tft.init();
   //tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
@@ -353,11 +340,6 @@ void break_screen(String mode) {
       //Serial.println("hello ye");
       if (mode == "task") {
         task_id = readRFID("task");
-        /*
-        if (STATION == 1)
-          task_id = readRFID("task_stat1");
-        else
-          task_id = readRFID("task_stat2");*/
 
         if (task_id == -1) task_id = prev_task_id;  //mantain id if no card is read
         if ((task_id != -1) && (prev_task_id != task_id)) {
@@ -676,8 +658,10 @@ void buttons() {
     if (pom2 == 0) {
       Serial.println(" break");
 
-      if (wifi == 1)
+      if (wifi == 1){
         sendInfo_final_task(task_id, round(data[task_id].av), data[task_id].pr, tt_h * 60 + tt_m, emp_id);
+        sendInfo_task(0, 0, emp_id);
+      }
       task_id = -1;
       waitForCard_screen("task");
       pom2 = 1;

@@ -3,9 +3,11 @@
 #include <MFRC522.h>      //https://github.com/miguelbalboa/rfid
 #include <WiFi.h>         // WiFi control for ESP32
 #include <ThingsBoard.h>  // ThingsBoard SDK
-
 #include "secrets.h"
 //Constants
+
+#define implementation
+
 #define SS_PIN 5
 #define RST_PIN 3
 #define MISO_PIN 19
@@ -15,8 +17,12 @@
 byte nuidPICC[4] = { 0, 0, 0, 0 };
 MFRC522::MIFARE_Key key;
 MFRC522 rfid = MFRC522(SS_PIN, RST_PIN);
+int id = -1;
+int last_send = 0;
+unsigned long sampling_time = 2000;
+unsigned long max_time = 5000;
+unsigned long last_seen_in = 0;
 unsigned long current = 0;
-int lastSend = 0;
 
 const int pwmFreq = 5000;
 const int pwmResolution = 8;
@@ -58,6 +64,9 @@ int rfid_gabarit[num_of_gabarits][4] = { { 225, 175, 204, 27 },  //1 NAOOO
 
 
 void rfid_settings() {
+  Serial.println(rfid.PCD_GetAntennaGain());  // gives me a 64 (00000010)
+  rfid.PCD_SetAntennaGain(rfid.RxGain_max);   // set to max (00001110)
+  Serial.println(rfid.PCD_GetAntennaGain());  //gives me the 112
   ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
   //ledcAttachPin(TFT_BL, pwmLedChannelTFT);
   ledcWrite(pwmLedChannelTFT, 67);
@@ -90,73 +99,81 @@ void InitWiFi() {
 
 void setup() {
   //Init Serial USB
-  //initialize wifi
-  WiFi.begin(STA_SSID, STA_PASS);
-  InitWiFi();
+#ifndef implementation
   Serial.begin(115200);
+#endif
   Serial.println("Initialize RFID");
   SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);  // CHANGE DEFAULT PINS
   rfid.PCD_Init();
   Serial.print("Reader :");
   rfid.PCD_DumpVersionToSerial();
   Serial.println("RFID ready");
-  Serial.println(rfid.PCD_GetAntennaGain());  // gives me a 64 (00000010)
-  rfid.PCD_SetAntennaGain(112);               // set to max (00001110)
-  Serial.println(rfid.PCD_GetAntennaGain());  //gives me the 112
   rfid_settings();
   Serial.println("Please pass gabarit card");
+  
+  WiFi.begin(STA_SSID, STA_PASS);
+  InitWiFi();
+  connectTB();
 }
 
 void loop() {
+
   int id = readRFID();
+  //delay(100);
 
-/*
-  if ((id != -1) && (id != 0)) {
-    sendInfo(id);
-    current = millis();
-    lastSend = id;
-  }
-
-  if (millis() - current > 5000) {
-    if (lastSend != 0) {
-      Serial.println("too long since seen gabarit");
-      sendInfo(0);
-      lastSend = 0;
-      current = millis();
-    }
-  }*/
-  delay(1000);
-}
-
-void sendInfo(int task) {
-  // Reconnect to WiFi, if needed
-  while (WiFi.status() != WL_CONNECTED) {
-    Serial.print("Not connected to WiFi... reconnecting");
-    reconnect();
-    delay(500);  //return;
-  }
-  // Reconnect to ThingsBoard, if needed
-  while (!tb.connected()) {
-    Serial.println("Connecting to The ThingsBoard");
-    if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
-      Serial.println("Failed to connect");
-      delay(500);  //return;
+  if (id != -1) {
+    if (last_send != id) {
+      sendInfo(id);
+      Serial.print("1: ");
+      Serial.println(id);
+      last_seen_in = millis();
+      last_send = id;
+    } else if (millis() - last_seen_in >= sampling_time) {  //send repeated message "2","2", with a rate of sampling_time
+      sendInfo(id);
+      Serial.print("2: ");
+      Serial.println(id);
+      last_seen_in = millis();
     }
   }
-  Serial.print("Sending id: ");
-  Serial.println(task);
-  const int data_items = 1;
 
-  Telemetry data[data_items] = {
-    { "task", task },
-  };
-  tb.sendTelemetry(data, data_items);
+  if ((millis() - last_seen_in >= max_time) && (last_send != 0)) {
+    sendInfo(0);
+    Serial.print("3: ");
+    Serial.println(0);
+    last_send = 0;
+  }
 
-  // Process messages
-  tb.loop();
+  rfid.PCD_SoftPowerDown();
+  rfid.PCD_SoftPowerUp();
 }
 
 
+int readRFID() {
+  ////Read RFID card
+  int id = -1;
+  for (byte i = 0; i < 6; i++) {
+    key.keyByte[i] = 0xFF;
+  }
+  // Look for new cards
+  if (!rfid.PICC_IsNewCardPresent())
+    return -1;
+  // Verify if the NUID has been readed
+  if (!rfid.PICC_ReadCardSerial())
+    return -1;
+  // Store NUID into nuidPICC array
+  for (byte i = 0; i < 4; i++) {
+    nuidPICC[i] = rfid.uid.uidByte[i];
+  }
+
+  id = getCardId(rfid.uid.uidByte, rfid.uid.size);
+  
+
+  // Halt PICC
+  rfid.PICC_HaltA();
+  // Stop encryption on PCD
+  rfid.PCD_StopCrypto1();
+  return id;
+}
 
 
 int getCardId(byte* buffer, int size) {
@@ -172,6 +189,7 @@ int getCardId(byte* buffer, int size) {
     buffer_str = String(buffer[i]);  //buffer[i] is byte type, need to pass first to a string
     curr_rfid[i] = buffer_str.toInt();
   }
+
 
   for (int i = 0; i < num_of_cards; i++) {
     isequal = compareRfid(curr_rfid, rfid_gabarit[i], size);
@@ -200,49 +218,44 @@ bool compareRfid(int rfid1[], int rfid2[], int size) {
 //Helper routine to dump a byte array as dec values to Serial.
 void printDec(byte* buffer, byte bufferSize) {
   for (byte i = 0; i < bufferSize; i++) {
-    Serial.println("");
     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
     Serial.print(buffer[i], DEC);
+    Serial.print(", ");
   }
   Serial.println();
 }
 
-int readRFID() {
-  //reading
-  ////Read RFID card
-  int id = -1;
-  for (byte i = 0; i < 6; i++) {
-    key.keyByte[i] = 0xFF;
+void connectTB() {
+  // Reconnect to ThingsBoard, if needed
+  while (!tb.connected()) {
+    Serial.println("Connecting to The ThingsBoard");
+    if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
+      Serial.println("Failed to connect");
+      delay(500);  //return;
+    }
   }
-  // Look for new cards
-  if (!rfid.PICC_IsNewCardPresent()) {
-    //Serial.println("no, no new card is present");
-    return -1;
-  }
-  // Verify if the NUID has been readed
-  if (!rfid.PICC_ReadCardSerial()) {
-    Serial.println("NUID has been read");
-    return -1;
-  }
-  // Store NUID into nuidPICC array
+  Serial.println("Connected to ThingsBoard");
+}
 
-  for (byte i = 0; i < 4; i++) {
-    nuidPICC[i] = rfid.uid.uidByte[i];
+void sendInfo(int gabarit) {
+  // Reconnect to WiFi, if needed
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print("Not connected to WiFi... reconnecting");
+    reconnect();
+    delay(500);  //return;
   }
-  //Serial.print("RFID In dec: ");
-  //printDec(rfid.uid.uidByte, rfid.uid.size);
+  // Reconnect to ThingsBoard, if needed
+  connectTB();
 
+  Serial.print("Sending id: ");
+  Serial.println(gabarit);
+  const int data_items = 1;
 
-  id = getCardId(rfid.uid.uidByte, rfid.uid.size);
-  if (id == -1) {
-    Serial.println("Gabarit not found");
-  } else {
-    Serial.print("Gabarit passing: ");
-    Serial.println(id);
-  }
-  // Halt PICC
-  rfid.PICC_HaltA();
-  // Stop encryption on PCD
-  rfid.PCD_StopCrypto1();
-  return id;
+  Telemetry data[data_items] = {
+    { "gabarit", gabarit },
+  };
+  tb.sendTelemetry(data, data_items);
+
+  // Process messages
+  tb.loop();
 }

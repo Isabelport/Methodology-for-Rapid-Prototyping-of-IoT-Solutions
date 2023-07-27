@@ -133,10 +133,10 @@ void printDec(byte* buffer, byte bufferSize) {
 }
 
 bool compareRfid_employee(String rfid1, String rfid2) {
-  int equal = 0;
+  int equal = 0;/*
   Serial.println("compare rfid employee");
   Serial.println(rfid1);
-  Serial.println(rfid2);
+  Serial.println(rfid2);*/
   if (rfid1 == rfid2)
     return true;
   else
@@ -146,7 +146,6 @@ bool compareRfid_employee(String rfid1, String rfid2) {
 
 bool compareRfid(int rfid1[], int rfid2[], int size) {
   int equal = 0;
-  Serial.println("Compare rfid task");
 
   for (int i = 0; i < size; i++) {
     if (rfid1[i] == rfid2[i])
@@ -202,13 +201,8 @@ int getCardId(byte* buffer, int size, String mode) {  //mode = task_stat1, task_
 
   card_id = card_id + 1;
 
-  if (card_id == -1) {
-    if (mode == "employee")  //even if it does not recognize in database, it is still allowed to move on
-      card_id = 0;
-    else
-      card_id = 7;
-  }
-
+  
+  //card_id = 0; even if it does not recognize in database, it is still allowed to move on
 
 
   return card_id;
@@ -260,13 +254,18 @@ int readRFID(String mode) {  //mode TASK or EMPLOYEE
 
   if (mode == "task") {
     id = getCardId(rfid.uid.uidByte, rfid.uid.size, "task_stat1");
-    id = getCardId(rfid.uid.uidByte, rfid.uid.size, "task_stat2");
-    if (id == -1) {
-      Serial.println("Task not found");
-    } else {
+    Serial.print("id1:");Serial.println(id);
+    if (id == 0)
+      id = getCardId(rfid.uid.uidByte, rfid.uid.size, "task_stat2");
+    Serial.print("id2:"); Serial.println(id);
+    if ((id == 0) && (mode == "task")){
+      id = 7;
+      Serial.println("help");
+  }
       Serial.print("Task being performed: ");
       Serial.println(id);
-    }
+    
+
   } else if (mode == "employee") {
     id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
     if (id == -1) {
@@ -276,6 +275,7 @@ int readRFID(String mode) {  //mode TASK or EMPLOYEE
       Serial.println(id);
     }
   }
+
   // Halt PICC
   rfid.PICC_HaltA();
   // Stop encryption on PCD
