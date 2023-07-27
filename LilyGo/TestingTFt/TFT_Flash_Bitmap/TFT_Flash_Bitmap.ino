@@ -7,7 +7,7 @@
 
 /*
  This sketch demonstrates loading images from arrays stored in program (FLASH) memory.
-
+º-
  Works with TFT_eSPI library here:
  https://github.com/Bodmer/TFT_eSPI
 

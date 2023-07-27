@@ -1,6 +1,10 @@
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
 
+//#define implementacao_arquiled
+#define STATION 1  //1 or 2
+
+
 #include "fonts.h"
 #include "icons.h"
 #include "secrets.h"
@@ -16,8 +20,8 @@ TFT_eSPI tft = TFT_eSPI();
 #define TFT_RESET 5
 
 #define color_yellow 0x65DB
+bool wifi = 1;
 
-#define STATION 1  //1 or 2
 
 //Time related
 int laps = 0;
@@ -51,15 +55,16 @@ int first = 1;
 // if threshold = 2, if average is 6, if you score 7 is considered equal, 8 is increase, 6 is equal, 5 is equal, 4 is decrease
 int threshold = 1;
 
-
 /*******************************************CODE*********************************************/
 void setup() {
   //Initialize screen
   tft.init();
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   tft.fillScreen(TFT_BLACK);
+#ifndef implementacao_arquiled
   Serial.begin(115200);
   Serial.println("TFT ready");
+#endif
   ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
   //ledcAttachPin(TFT_BL, pwmLedChannelTFT);
   ledcWrite(pwmLedChannelTFT, 67);
@@ -69,12 +74,15 @@ void setup() {
   pinMode(GREEN_BUTTON, INPUT_PULLUP);
   pinMode(YELLOW_BUTTON, INPUT_PULLUP);
 
-  //Initialize wifi and TB
-  tft.drawString("Por favor ligar-se ao Wi-Fi.", 5, 70, 4);
-  WiFi.begin(STA_SSID, STA_PASS);
-  InitWiFi();
-  connectTB();
+  //Initialize wifi and TB //sendinfo
+  if (wifi == 1) {
+    tft.drawString("Por favor ligar-se ao Wi-Fi.", 5, 70, 4);
+    WiFi.begin(STA_SSID, STA_PASS);
+    InitWiFi();
+    connectTB();
+  }
   tft.fillScreen(TFT_BLACK);
+
 
   //Initialize RFID
   Serial.println("Initialize RFID");
@@ -92,32 +100,50 @@ void setup() {
 
   assignTaskValues(data);
   Serial.println("Ready! Let's start!");
+  sendInfo_task(0, 0, 0);
 
   waitForCard_screen("employee");
 }
 
 //zeros all variables
-void reset() {
+void reset_screen() {
+  //if (first == 1)
+  sendInfo_task(0, task_id, emp_id);
   first = 0;
+  delay(100);
   tft.fillScreen(TFT_BLACK);
+  //tft.init();
+  //tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
+  //tft.fillScreen(TFT_BLACK);
+
   tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
 
   tft.setTextColor(color_yellow);
   tft.drawString("OPERADOR:", 0, 5);
-  tft.drawString(employee_name[emp_id], 90, 5);
-
   tft.setTextColor(TFT_WHITE);
+  Serial.println(emp_id);
+  Serial.println(employee_name[emp_id]);
+  tft.drawString(employee_name[emp_id], 95, 5);
+
+  tft.setTextColor(color_yellow);
   tft.drawString("TAREFA:", 0, 22);
+  tft.setTextColor(TFT_WHITE);
+  Serial.println(task_id);
+  Serial.println(data[task_id].task_name);
   tft.drawString(data[task_id].task_name, 67, 22);
 
+
+  tft.setTextColor(color_yellow);
   tft.drawString("MEDIA:", 210, 22);
   int av = round(data[task_id].av);
   int av_m = getMin(av);
   int av_s = getSec(av);
   String av_m_ = timeToString(av_m);
   String av_s_ = timeToString(av_s);
+  tft.setTextColor(TFT_WHITE);
   if (av != 0)
     tft.drawString(av_m_ + ":" + av_s_, 265, 22);
+
 
   tft.drawLine(200, 42, 200, 200, color_yellow);
   tft.drawLine(0, 42, 500, 42, color_yellow);
@@ -138,87 +164,96 @@ void reset() {
 }
 
 void waitForCard_screen(String mode) {
+  //int pre_task_id = task_id;
+  delay(100);
   tft.fillScreen(TFT_BLACK);
+  //tft.init();
+  //tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
+  //tft.fillScreen(TFT_BLACK);
 
   if (mode == "task") {
     Serial.println("Wait for task Screen");
-
+    tft.setTextColor(color_yellow);
+    Serial.println(emp_id);
+    Serial.println(employee_name[emp_id]);
+    tft.drawString(employee_name[emp_id], 5, 40, 4);
     tft.setTextColor(TFT_WHITE);
-    tft.drawString(employee_name[emp_id], 5, 45, 4);
-    tft.drawString("Para comecar", 5, 70, 4);
-    tft.drawString("passar cartao da tarefa.", 5, 95, 4);
+    tft.drawString("Para continuar", 5, 70, 4);
+    tft.drawString("inserir cartao da TAREFA.", 5, 95, 4);
+    delay(1000);
 
+    //tft.setTextColor(TFT_CYAN);
+    //tft.drawString("ou clicar no botao amarelo", 5, 105, 4);
+    //tft.drawString("para trocar de operador", 5, 130, 4);
 
-
-  } else {
+  } else if (mode == "employee") {
     Serial.println("Wait for employee Screen");
-    if (first == 0) {
-      tft.setTextColor(TFT_WHITE);
-      tft.drawString("Pausa", 5, 45, 4);
-      tft.drawString("Para continuar", 5, 70, 4);
-      tft.drawString("passar cartao de identific.", 5, 95, 4);
-    } else {
-      tft.setTextColor(TFT_WHITE);
-      tft.drawString("Para continuar", 5, 60, 4);
-      tft.drawString("passar cartao de identific.", 5, 85, 4);
-    }
+    tft.setTextColor(TFT_WHITE);
+    tft.drawString("Para continuar", 5, 60, 4);
+    tft.drawString("passar cartao de ID.", 5, 85, 4);
   }
 
   while (1) {
+    int break_s_prev = break_s;
 
-    if (first == 0) {
-      ss1 = millis();
+    ss1 = millis();
 
-      // MILLISECONDS
-      if (ss1 > ss2 + 9) {  //counting milliseconds for break time
-        ss2 = ss1;
-        break_ss++;
-      }
-
-      // SECONDS
-      //since the function of readrfid takes a part of the processing, the seconds seem "slower",
-      //so we assumed that 40ms are 1 second, which in the end actually look like one second
-      if (break_ss > 40) {  //counting "seconds" for break time
-        Serial.print("Break time: ");
-        Serial.print(break_m);
-        Serial.print(":");
-        Serial.println(break_s);
-        break_s++;
-        break_ss = 0;
-      }
-
-      // MINUTES
-      if (break_s > 59) {  //counting minutes for break time
-        break_s = 0;
-        break_m++;
-      }
+    // MILLISECONDS
+    if (ss1 > ss2 + 9) {  //counting milliseconds for break time
+      ss2 = ss1;
+      break_ss++;
     }
+
+    // SECONDS
+    //since the function of readrfid takes a part of the processing, the seconds seem "slower",
+    //so we assumed that 40ms are 1 second, which in the end actually look like one second
+    if (break_ss > 40) {  //counting "seconds" for break time
+      break_s++;
+      break_ss = 0;
+    }
+
+    // MINUTES
+    if (break_s > 59) {  //counting minutes for break time
+      break_s = 0;
+      break_m++;
+    }
+
 
     //TOF
     //still checking distance while in break
-    checkAndSendDistance();
+    if (wifi == 1)
+      checkAndSendDistance();
 
-    if (mode == "task") {
-      if (STATION == 1)
-        task_id = readRFID("task_stat1");
-      else
-        task_id = readRFID("task_stat2");
-      if (task_id != -1) {
-        break_screen("task");
-        break;
-      }
-    } else {
-      emp_id = readRFID("employee");
-      //emp_id--;
-      if (emp_id != -1) {
-        break_screen("employee");
-        break;
+    if (break_s_prev != break_s) {
+      //Serial.println("ohyeye");
+
+      if (mode == "task") {
+        task_id = readRFID("task");
+        /*
+        //if (STATION == 1)
+          task_id = readRFID("task_stat1");
+        else
+          task_id = readRFID("task_stat2");
+          */
+        if (task_id != -1) {
+          break_screen("task");
+          break;
+        }
+      } 
+      else if (mode == "employee") {
+        emp_id = readRFID("employee");
+        //emp_id--;
+        if (emp_id != -1) {
+          waitForCard_screen("task");
+          //break_screen("employee");
+          break;
+        }
       }
     }
-    //DELETE BUTTONS??
 
     green = readButton(green, GREEN_BUTTON);
     yellow = readButton(yellow, YELLOW_BUTTON);
+
     if (green.clicked) {
       Serial.println("green");
       if (pom == 0)
@@ -228,84 +263,127 @@ void waitForCard_screen(String mode) {
 
     if (yellow.clicked) {
       Serial.println("yellow");
-      if (pom2 == 0)
-        pom2 = 1;
       if (mode == "task") {
+        Serial.println("here");
+        //task_id = -1;
         waitForCard_screen("employee");
         break;
       }
+      if (pom2 == 0)
+        pom2 = 1;
     } else
       pom2 = 0;
   }
 }
 
 void break_screen(String mode) {
-
+  int prev_emp_id = emp_id;
+  int prev_task_id = task_id;
+  delay(100);
   Serial.println("hello");
   tft.fillScreen(TFT_BLACK);
-
+  //tft.init();
+  //tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
+  //tft.fillScreen(TFT_BLACK);
+  
+  /*
   if (mode == "employee") {
 
     tft.setTextColor(TFT_WHITE);
-    Serial.println("Break screen employee");
+    Serial.println("Break screen task");
     Serial.println(employee_name[emp_id]);
-    tft.drawString("Operador: ", 5, 20, 4);
-    tft.drawString(employee_name[emp_id], 125, 20, 4);
+    tft.drawString("Operador: ", 5, 40, 4);
+    tft.drawString(employee_name[emp_id], 125, 40, 4);
 
-    tft.setTextColor(TFT_CYAN);
-    tft.drawString("Clicar no botao amarelo", 5, 50, 4);
-    tft.drawString("para trocar de operador", 5, 75, 4);
+    //tft.setTextColor(TFT_CYAN);
+    //tft.drawString("Clicar no botao amarelo", 5, 50, 4);
+    //tft.drawString("para trocar de operador", 5, 75, 4);
 
     tft.setTextColor(TFT_GREEN);
-    tft.drawString("ou no botao verde", 5, 105, 4);
-    tft.drawString("para continuar", 5, 130, 4);
+    tft.drawString("Clicar no botao verde", 5, 70, 4);
+    tft.drawString("para continuar", 5, 95, 4);*/
 
-  } else {
+    if (mode == "task") {
     tft.setTextColor(TFT_WHITE);
     Serial.println("Break screen task");
-    tft.drawString("Tarefa: ", 5, 20, 4);
-    tft.drawString(data[task_id].task_name, 90, 20, 4);
+    tft.drawString("Tarefa: ", 5, 40, 4);
+    tft.drawString(data[task_id].task_name, 90, 40, 4);
 
-    tft.setTextColor(TFT_CYAN);
-    tft.drawString("Clicar no botao amarelo", 5, 50, 4);
-    tft.drawString("para trocar de tarefa", 5, 75, 4);
+    //tft.setTextColor(TFT_CYAN);
+    //tft.drawString("Clicar no botao amarelo", 5, 50, 4);
+    //tft.drawString("para voltar atras", 5, 75, 4);
 
     tft.setTextColor(TFT_GREEN);
-    tft.drawString("ou no botao verde", 5, 105, 4);
-    tft.drawString("para comecar", 5, 130, 4);
+    tft.drawString("Clicar no botao verde", 5, 70, 4);
+    tft.drawString("para comecar", 5, 95, 4);
   }
 
   while (1) {
-    if (first == 0) {
-      ss1 = millis();
+    int prev_break_s = break_s;
 
-      // MILLISECONDS
-      if (ss1 > ss2 + 9) {  //counting milliseconds for break time
-        ss2 = ss1;
-        break_ss++;
-      }
+    ss1 = millis();
 
-      // SECONDS
-      if (break_ss > 99) {  //counting seconds for break time
-        Serial.print("Break time: ");
-        Serial.print(break_m);
-        Serial.print(":");
-        Serial.println(break_s);
-        break_s++;
-        break_ss = 0;
-      }
-
-      // MINUTES
-      if (break_s > 59) {  //counting minutes for break time
-        break_s = 0;
-        break_m++;
-      }
+    // MILLISECONDS
+    if (ss1 > ss2 + 9) {  //counting milliseconds for break time
+      ss2 = ss1;
+      break_ss++;
     }
+
+    // SECONDS
+    if (break_ss > 99) {  //counting seconds for break time
+      /*Serial.print("Break time: ");
+      Serial.print(break_m);
+      Serial.print(":");
+      Serial.println(break_s);*/
+      break_s++;
+      break_ss = 0;
+    }
+
+    // MINUTES
+    if (break_s > 59) {  //counting minutes for break time
+      break_s = 0;
+      break_m++;
+    }
+
     //TOF
-    checkAndSendDistance();
+    if (wifi == 1)
+      checkAndSendDistance();
+
+    if (prev_break_s != break_s) {  //reading rfid only each second, else it cannot proceed
+      //Serial.println("hello ye");
+      if (mode == "task") {
+        task_id = readRFID("task");
+        /*
+        if (STATION == 1)
+          task_id = readRFID("task_stat1");
+        else
+          task_id = readRFID("task_stat2");*/
+
+        if (task_id == -1) task_id = prev_task_id;  //mantain id if no card is read
+        if ((task_id != -1) && (prev_task_id != task_id)) {
+          prev_task_id = task_id;  //update prev_task_id
+          break_screen("task");
+          break;
+        }
+      } 
+      /*
+      else if (mode == "employee") {
+        emp_id = readRFID("employee");
+
+        if (emp_id == -1) emp_id = prev_emp_id;
+        if ((emp_id != -1) && (prev_emp_id != emp_id)) {
+          prev_emp_id = emp_id;
+          waitForCard_screen("task");
+          //break_screen("employee");
+          break;
+        }
+      }*/
+
+    }
 
     green = readButton(green, GREEN_BUTTON);
     yellow = readButton(yellow, YELLOW_BUTTON);
+
 
     if (mode == "employee") {
       if (green.clicked) {
@@ -321,36 +399,40 @@ void break_screen(String mode) {
       if (yellow.clicked) {
         Serial.println("yellow");
         if (pom2 == 0) {
-          emp_id = -1;
+          //emp_id = -1;
           pom2 = 1;
-          waitForCard_screen("employee");
-          break;
+          //setup();
+          //waitForCard_screen("employee");
+          //break;
         }
       } else {
         pom2 = 0;
       }
-    } else {
+    } else if (mode == "task") {
       if (green.clicked) {
-        if (first == 0) {
-          sendInfo_task(break_m, break_s, 0);  //tell tb break is over
-        }
+        Serial.println("START");
         Serial.println("green");
+        if (wifi == 1)
+          sendInfo_task(break_m * 60 + break_s, 0, emp_id);  //tell tb break (7) is over
+
+
         if (pom == 0) {
           pom = 1;
-          reset();
-          break;
         }
+        reset_screen();
+        break;
       } else {
         pom = 0;
       }
       if (yellow.clicked) {
         Serial.println("yellow");
         if (pom2 == 0) {
-          task_id = -1;
           pom2 = 1;
-          waitForCard_screen("task");
-          break;
         }
+        //task_id = -1;
+        //emp_id = -1;
+        waitForCard_screen("employee");
+        break;
       } else {
         pom2 = 0;
       }
@@ -381,10 +463,12 @@ void loop() {
   }
 
   if (tt_current != tt_temp) {
-    tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
-    tft.drawString("TOTAL:", 5, 130);
-    tft.fillRect(70, 130, 50, 15, TFT_BLACK);
-    tft.drawString(tt_hours + ":" + tt_minutes, 70, 130);
+    tft.setFreeFont(&DejaVu_LGC_Sans_Bold_14);
+    tft.setTextColor(color_yellow);
+    tft.drawString("TOTAL:", 5, 150);
+    tft.fillRect(70, 150, 50, 15, TFT_BLACK);
+    tft.setTextColor(TFT_WHITE);
+    tft.drawString(tt_hours + ":" + tt_minutes, 70, 150);
     tt_temp = tt_current;
   }
 
@@ -430,7 +514,8 @@ void loop() {
   buttons();
 
   //TOF
-  checkAndSendDistance();
+  if (wifi == 1)
+    checkAndSendDistance();
 }
 
 String timeToString(int t) {
@@ -482,9 +567,10 @@ void averageFunc() {
   String av_m_ = timeToString(av_m);
   String av_s_ = timeToString(av_s);
 
-  tft.fillRect(265, 5, 50, 15, TFT_BLACK);
+  tft.fillRect(265, 22, 70, 15, TFT_BLACK);
   tft.setFreeFont(&DejaVu_LGC_Sans_Bold_12);
-  tft.drawString(av_m_ + ":" + av_s_, 265, 25);
+  tft.setTextColor(TFT_WHITE);
+  tft.drawString(av_m_ + ":" + av_s_, 265, 22);
 }
 
 bool personal_record(int laptime) {
@@ -575,8 +661,8 @@ void buttons() {
 
       scoreTime();
       averageFunc();
-
-      sendInfo_task(laptime_m, laptime_s, task_id);
+      if (wifi == 1)
+        sendInfo_task(laptime_m * 60 + laptime_s, task_id, emp_id);
       tft.fillRect(10, 70, 120, 60, TFT_BLACK);
       s = 0;
       m = 0;
@@ -588,19 +674,10 @@ void buttons() {
 
   if (yellow.clicked) {
     if (pom2 == 0) {
-      Serial.print("Sending final info... av: ");
-      Serial.print(round(data[task_id].av));
-      Serial.print(" pr: ");
-      Serial.print(data[task_id].pr);
-      Serial.print(" taskid: ");
-      Serial.print(task_id);
-      Serial.print(" total h: ");
-      Serial.print(tt_h);
-      Serial.print(" total m: ");
-      Serial.print(tt_m);
-      Serial.print(" break");
+      Serial.println(" break");
 
-      sendInfo_final_task(task_id, round(data[task_id].av), data[task_id].pr, tt_h, tt_m);
+      if (wifi == 1)
+        sendInfo_final_task(task_id, round(data[task_id].av), data[task_id].pr, tt_h * 60 + tt_m, emp_id);
       task_id = -1;
       waitForCard_screen("task");
       pom2 = 1;

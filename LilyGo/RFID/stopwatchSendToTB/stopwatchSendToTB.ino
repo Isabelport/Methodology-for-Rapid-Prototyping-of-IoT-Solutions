@@ -171,7 +171,7 @@ void sendInfo(int min, int sec, int mil) {
 }
 
 void buttons() {
-  if (digitalRead(0) == 0) {
+  if (digitalRead(43) == 0) {
     if (pom == 0) {
       if (fase == 1) {
         //winer++;
@@ -233,7 +233,7 @@ void buttons() {
     pom = 0;
   }
 
-  if (digitalRead(14) == 0) {
+  if (digitalRead(44) == 0) {
     if (pom2 == 0) {
 
 

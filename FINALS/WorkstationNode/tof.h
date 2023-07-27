@@ -28,18 +28,18 @@ void initDistSensor() {
     Serial.println("ToF failed to begin. Please check wiring. Freezing...");
     while(distanceSensor.begin()){
       Serial.println("ToF failed to begin. Please check wiring. Freezing...");
-      tft.drawString("Verificar ToF", 10, 80, 4);
+      tft.drawString("Verificar ToF", 5, 80, 4);
       delay(500);
     }
     Serial.println("ToF ready!");
     tft.fillRect(10, 80, 40, 100, TFT_BLACK);
-    tft.drawString("ToF conectado", 10, 80, 4);
+    tft.drawString("ToF conectado", 5, 80, 4);
     delay(1500);
 
   }
   else{
     Serial.println("ToF ready!");
-    tft.drawString("ToF conectado", 10, 80, 4);
+    tft.drawString("ToF conectado", 5, 80, 4);
     delay(2000);
   }
   distanceSensor.setDistanceModeLong();  
@@ -97,7 +97,7 @@ void checkAndSendDistance(){
         }
         Serial.print("Sending distance:");
         Serial.println(distance);
-        sendInfo_tof(distance, state);
+        sendInfo_tof(distance, state, emp_id);
       }
     }
 }
