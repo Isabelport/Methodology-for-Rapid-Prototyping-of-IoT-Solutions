@@ -58,6 +58,7 @@ void setup() {
   tft.init();
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   tft.fillScreen(TFT_BLACK);
+  delay(100);
 #ifndef implementation
   Serial.begin(115200);
 #endif

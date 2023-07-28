@@ -6,8 +6,7 @@
 #include <BLEAdvertisedDevice.h>
 #include "secrets.h"
 
-// Baud rate for debug serial
-#define SERIAL_DEBUG_BAUD 115200
+#define implementation
 
 //program vars
 #define AWAY 0
@@ -24,7 +23,7 @@ ThingsBoard tb(espClient);
 // the Wifi radio's status
 int status = WL_IDLE_STATUS;
 
-int scanTime = 10;  //In seconds was 10
+int scanTime = 5;  //In seconds was 10
 BLEScan* pBLEScan;
 
 int active[MAX_DEVICES][3];  //[0] - id ; [1] - rssi; [2] to send update ?
@@ -88,7 +87,6 @@ int addDevice(int id) {
 void updateDevice(int idx, int new_rssi, unsigned long new_time) {
   active[idx][1] = new_rssi;
   Times[idx] = new_time;
-
 }
 
 /*
@@ -125,9 +123,8 @@ void sendInfo(int type, int idx) {
       { "rssi", active[idx][1] },
     };
     tb.sendTelemetry(data, data_items);
-  } 
-  else if (type == AWAY) {
-    if (setup_ == 1){
+  } else if (type == AWAY) {
+    if (setup_ == 1) {
       Serial.print("Initializing Beacon : ");
       Serial.println(idx);
       Telemetry data[data_items] = {
@@ -135,18 +132,17 @@ void sendInfo(int type, int idx) {
         { "id", idx },
         { "rssi", 0 },
       };
-    tb.sendTelemetry(data, data_items);
-    }
-    else {
-    //device active[idx][0] has not been seen with rssi active[idx][1]
-    Serial.print("Beacon OUT : ");
-    Serial.println(active[idx][0], HEX);
-    Telemetry data[data_items] = {
-      { "state", AWAY },
-      { "id", active[idx][0] },
-      { "rssi", 0 },
-    };
-    tb.sendTelemetry(data, data_items);
+      tb.sendTelemetry(data, data_items);
+    } else {
+      //device active[idx][0] has not been seen with rssi active[idx][1]
+      Serial.print("Beacon OUT : ");
+      Serial.println(active[idx][0], HEX);
+      Telemetry data[data_items] = {
+        { "state", AWAY },
+        { "id", active[idx][0] },
+        { "rssi", 0 },
+      };
+      tb.sendTelemetry(data, data_items);
     }
   }
   // Process messages
@@ -163,10 +159,20 @@ void checkState() {
 
   //Serial.println(last_timestamp);
   for (int i = 0; i < MAX_DEVICES; i++) {
-    if(active[i][0]!=-1){
-    Serial.print("Active");Serial.print(i);Serial.print(" : ");Serial.print(active[i][0]);Serial.print(";");Serial.print(active[i][1]);Serial.print(";");Serial.println(active[i][2]);
-    Serial.print("Times");Serial.print(i);Serial.print(" : ");Serial.println(Times[i]);
-    Serial.println(last_timestamp);
+    if (active[i][0] != -1) {
+      Serial.print("Active");
+      Serial.print(i);
+      Serial.print(" : ");
+      Serial.print(active[i][0]);
+      Serial.print(";");
+      Serial.print(active[i][1]);
+      Serial.print(";");
+      Serial.println(active[i][2]);
+      Serial.print("Times");
+      Serial.print(i);
+      Serial.print(" : ");
+      Serial.println(Times[i]);
+      Serial.println(last_timestamp);
     }
     if (Times[i] != 0 && (last_timestamp - Times[i]) > TIME_THRESHOLD) {
       //if(active[i][0]!=-1){ // ISABEL
@@ -211,12 +217,14 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
         int idx = getIndex(beaconID);
         if (idx == -1) {
           idx = addDevice(beaconID);
+          Serial.println("update Times[] and active[]");
           updateDevice(idx, beaconRSSI, millis());  // update Times[] and active[]
           active[idx][2] = 1;
           flag_send = 1;
           active_beacons++;
         } else if (abs(abs(beaconRSSI) - abs(active[idx][1])) > RSSI_THRESHOLD) {
           updateDevice(idx, beaconRSSI, millis());  // rssi changed significantly
+          Serial.println("rssi changed significantly");
           active[idx][2] = 1;
           flag_send = 1;
         } else {
@@ -232,7 +240,9 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
 
 // Setup an application
 void setup() {
-  Serial.begin(SERIAL_DEBUG_BAUD);
+#ifndef implementation
+  Serial.begin(115200);
+#endif
   //initialize wifi
   WiFi.begin(STA_SSID, STA_PASS);
   InitWiFi();
@@ -241,22 +251,24 @@ void setup() {
   InitBLE();
   //initialize timestamp
   last_timestamp = millis();
+  setup_ = 1;
+
   for (int i = 0; i < MAX_DEVICES; i++) {
-    setup_ = 1;
-    sendInfo(AWAY,i+1);  //initializes all beacons in ThingsBoard to Away
+    sendInfo(AWAY, i + 1);  //initializes all beacons in ThingsBoard to Away
     //initialize devices array
     active[i][0] = -1;
     active[i][1] = 0;
-    active[i][2] = 0; 
+    active[i][2] = 0;
     Times[i] = 0;
+    /*
     Serial.print("id: ");
     Serial.print(active[i][0]);
     Serial.print("rssi: ");
     Serial.print(active[i][1]);
     Serial.print("to send: ");
-    Serial.println(active[i][2]);
-    setup_ = 0;
+    Serial.println(active[i][2]);*/
   }
+  setup_ = 0;
 }
 
 // Main application loop
