@@ -1,10 +1,10 @@
 /***** Wi-Fi Credentials *****/
-/*
+
   #define STA_SSID "ARQUILED"
   #define STA_PASS "BBAADDCC55"
-  */
+  /*
   #define STA_SSID "LAPTOP-ISABEL"
-  #define STA_PASS "HotspotIsabel"
+  #define STA_PASS "HotspotIsabel"*/
 
 /***** The ThingsBoard parameters *****/
 
