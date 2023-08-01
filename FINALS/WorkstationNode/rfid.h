@@ -91,20 +91,20 @@ task data[8];  //6 structs of task
 
 void initRFIDSensor() {
   rfid.PCD_Init();
-  Serial.print("Reader :");
+  Serial.print(F("Reader :"));
   rfid.PCD_DumpVersionToSerial();
   bool test = rfid.PCD_PerformSelfTest();
   if (test) {
-    Serial.println("RFID ready!");
+    Serial.println(F("RFID ready!"));
     tft.drawString("RFID conectado", 5, 40, 4);
     delay(1500);
   } else {
     while (!rfid.PCD_PerformSelfTest()) {
-      Serial.println("RFID failed to begin. Please check wiring. Freezing...");
+      Serial.println(F("RFID failed to begin. Please check wiring. Freezing..."));
       tft.drawString("Verificar RFID ", 5, 40, 4);
       delay(500);
     }
-    Serial.println("RFID ready!");
+    Serial.println(F("RFID ready!"));
     tft.fillRect(10, 50, 40, 100, TFT_BLACK);
     tft.drawString("RFID conectado", 5, 40, 4);
     delay(1500);
@@ -116,16 +116,18 @@ void initRFIDSensor() {
 void printDec(byte* buffer, byte bufferSize) {
   for (byte i = 0; i < bufferSize; i++) {
     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], DEC);
+    Serial.print(buffer[i]);
+    //Serial.print(buffer[i], DEC);
+
   }
-  Serial.println();
+  //Serial.println(F());
 }
 
 bool compareRfid_employee(String rfid1, String rfid2) {
   int equal = 0;/*
-  Serial.println("compare rfid employee");
-  Serial.println(rfid1);
-  Serial.println(rfid2);*/
+  Serial.println(F("compare rfid employee");
+  Serial.println(F(rfid1);
+  Serial.println(F(rfid2);*/
   if (rfid1 == rfid2)
     return true;
   else
@@ -211,14 +213,14 @@ int readRFID(String mode) {  //mode TASK or EMPLOYEE
       //if(rfid.PCD_PerformSelfTest()){
       while (!rfid.PCD_PerformSelfTest()) {  //MUDAR PARA !
         tft.setTextColor(TFT_BLUE);
-        Serial.println("RFID failed to begin. Please check wiring. Freezing...");
+        Serial.println(F("RFID failed to begin. Please check wiring. Freezing..."));
         tft.fillScreen(TFT_BLACK);
         tft.drawString("Verificar RFID ", 5, 60, 4);
         delay(500);
       }
       tft.fillScreen(TFT_BLACK);
       tft.setTextColor(TFT_WHITE);
-      Serial.println("RFID ready 3!");
+      Serial.println(F("RFID ready 3!"));
       tft.drawString("RFID conectado", 5, 60, 4);
       delay(1500);
     }
@@ -238,29 +240,30 @@ int readRFID(String mode) {  //mode TASK or EMPLOYEE
   for (byte i = 0; i < 4; i++) {
     nuidPICC[i] = rfid.uid.uidByte[i];
   }
-  Serial.print("RFID In dec: ");
+  Serial.print(F("RFID In dec: "));
   printDec(rfid.uid.uidByte, rfid.uid.size);
 
   if (mode == "task") {
     id = getCardId(rfid.uid.uidByte, rfid.uid.size, "task_stat1");
-    Serial.print("id1:");Serial.println(id);
+    Serial.print(F("id1:"));
+    Serial.println(id);
     if (id == 0)
       id = getCardId(rfid.uid.uidByte, rfid.uid.size, "task_stat2");
-    Serial.print("id2:"); Serial.println(id);
+    Serial.print(F("id2:")); 
+    Serial.println(id);
     if ((id == 0) && (mode == "task")){
       id = 7;
-      Serial.println("help");
   }
-      Serial.print("Task being performed: ");
+      Serial.print(F("Task being performed: "));
       Serial.println(id);
     
 
   } else if (mode == "employee") {
     id = getCardId(rfid.uid.uidByte, rfid.uid.size, mode);
     if (id == -1) {
-      Serial.println("Employee not found");
+      Serial.println(F("Employee not found"));
     } else {
-      Serial.print("Employee working: ");
+      Serial.print(F("Employee working: "));
       Serial.println(id);
     }
   }

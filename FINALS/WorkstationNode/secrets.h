@@ -1,6 +1,6 @@
 /***** Wi-Fi Credentials *****/
 
-  #define STA_SSID "ARQUILED"
+  #define STA_SSID "ARQUILED_Piso_1"
   #define STA_PASS "BBAADDCC55"
   /*
   #define STA_SSID "LAPTOP-ISABEL"

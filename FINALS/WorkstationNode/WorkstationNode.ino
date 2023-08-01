@@ -59,10 +59,11 @@ void setup() {
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   tft.fillScreen(TFT_BLACK);
   delay(100);
+  
 #ifndef implementation
   Serial.begin(115200);
 #endif
-  Serial.println("TFT ready");
+  Serial.println(F("TFT ready"));
   ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
   //ledcAttachPin(TFT_BL, pwmLedChannelTFT);
   ledcWrite(pwmLedChannelTFT, 67);
@@ -83,12 +84,12 @@ void setup() {
 
 
   //Initialize RFID
-  Serial.println("Initialize RFID");
+  Serial.println(F("Initialize RFID"));
   SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);  // CHANGE DEFAULT PINS
   initRFIDSensor();
 
   //Initialize ToF
-  Serial.println("Initialize ToF");
+  Serial.println(F("Initialize ToF"));
   Wire.setPins(SDA_PIN, SCL_PIN);
   Wire.begin();
   pinMode(SHUTDOWN_PIN, OUTPUT);
@@ -97,7 +98,7 @@ void setup() {
   initDistSensor();
 
   assignTaskValues(data);
-  Serial.println("Ready! Let's start!");
+  Serial.println(F("Ready! Let's start!"));
   sendInfo_task(0, 0, 0);
 
   waitForCard_screen("employee");
@@ -168,7 +169,7 @@ void waitForCard_screen(String mode) {
   //tft.fillScreen(TFT_BLACK);
 
   if (mode == "task") {
-    Serial.println("Wait for task Screen");
+    Serial.println(F("Wait for task Screen"));
     tft.setTextColor(color_yellow);
     Serial.println(employee_name[emp_id]);
     tft.drawString(employee_name[emp_id], 5, 40, 4);
@@ -182,7 +183,7 @@ void waitForCard_screen(String mode) {
     //tft.drawString("para trocar de operador", 5, 130, 4);
 
   } else if (mode == "employee") {
-    Serial.println("Wait for employee Screen");
+    Serial.println(F("Wait for employee Screen"));
     tft.setTextColor(TFT_WHITE);
     tft.drawString("Para continuar", 5, 60, 4);
     tft.drawString("passar cartao de ID.", 5, 85, 4);
@@ -220,7 +221,7 @@ void waitForCard_screen(String mode) {
       checkAndSendDistance();
 
     if (break_s_prev != break_s) {
-      //Serial.println("ohyeye");
+      //Serial.println(F("ohyeye");
 
       if (mode == "task") {
         task_id = readRFID("task");
@@ -244,16 +245,16 @@ void waitForCard_screen(String mode) {
     yellow = readButton(yellow, YELLOW_BUTTON);
 
     if (green.clicked) {
-      Serial.println("green");
+      Serial.println(F("green"));
       if (pom == 0)
         pom = 1;
     } else
       pom = 0;
 
     if (yellow.clicked) {
-      Serial.println("yellow");
+      Serial.println(F("yellow"));
       if (mode == "task") {
-        Serial.println("here");
+        Serial.println(F("here"));
         //task_id = -1;
         waitForCard_screen("employee");
         break;
@@ -278,8 +279,8 @@ void break_screen(String mode) {
   if (mode == "employee") {
 
     tft.setTextColor(TFT_WHITE);
-    Serial.println("Break screen task");
-    Serial.println(employee_name[emp_id]);
+    Serial.println(F("Break screen task");
+    Serial.println(F(employee_name[emp_id]);
     tft.drawString("Operador: ", 5, 40, 4);
     tft.drawString(employee_name[emp_id], 125, 40, 4);
 
@@ -293,7 +294,7 @@ void break_screen(String mode) {
 
     if (mode == "task") {
     tft.setTextColor(TFT_WHITE);
-    Serial.println("Break screen task");
+    Serial.println(F("Break screen task"));
     tft.drawString("Tarefa: ", 5, 40, 4);
     tft.drawString(data[task_id].task_name, 90, 40, 4);
 
@@ -319,10 +320,10 @@ void break_screen(String mode) {
 
     // SECONDS
     if (break_ss > 99) {  //counting seconds for break time
-      /*Serial.print("Break time: ");
-      Serial.print(break_m);
-      Serial.print(":");
-      Serial.println(break_s);*/
+      /*Serial.print(F("Break time: ");
+      Serial.print(F(break_m);
+      Serial.print(F(":");
+      Serial.println(F(break_s);*/
       break_s++;
       break_ss = 0;
     }
@@ -338,7 +339,7 @@ void break_screen(String mode) {
       checkAndSendDistance();
 
     if (prev_break_s != break_s) {  //reading rfid only each second, else it cannot proceed
-      //Serial.println("hello ye");
+      //Serial.println(F("hello ye");
       if (mode == "task") {
         task_id = readRFID("task");
 
@@ -370,7 +371,7 @@ void break_screen(String mode) {
 
     if (mode == "employee") {
       if (green.clicked) {
-        Serial.println("green");
+        Serial.println(F("green"));
         if (pom == 0) {
           pom = 1;
           waitForCard_screen("task");
@@ -380,7 +381,7 @@ void break_screen(String mode) {
         pom = 0;
       }
       if (yellow.clicked) {
-        Serial.println("yellow");
+        Serial.println(F("yellow"));
         if (pom2 == 0) {
           //emp_id = -1;
           pom2 = 1;
@@ -393,8 +394,8 @@ void break_screen(String mode) {
       }
     } else if (mode == "task") {
       if (green.clicked) {
-        Serial.println("START");
-        Serial.println("green");
+        Serial.println(F("START"));
+        Serial.println(F("green"));
         if (wifi == 1)
           sendInfo_task(break_m * 60 + break_s, 0, emp_id);  //tell tb break (7) is over
 
@@ -408,7 +409,7 @@ void break_screen(String mode) {
         pom = 0;
       }
       if (yellow.clicked) {
-        Serial.println("yellow");
+        Serial.println(F("yellow"));
         if (pom2 == 0) {
           pom2 = 1;
         }
@@ -441,7 +442,7 @@ void loop() {
     tft.setTextColor(TFT_WHITE);
     tft.fillRect(5, 70, 180, 60, TFT_BLACK);
     tft.drawString(current, 5, 70);
-    //Serial.println(current);
+    //Serial.println(F(current);
     temp = current;
   }
 
@@ -521,28 +522,28 @@ int getSec(int total) {
 void averageFunc() {
   sum = sum + laptime;
   float av_float;
-  Serial.print("task_id: ");
+  Serial.print(F("task_id: "));
   Serial.print(task_id);
-  Serial.print("   av: ");
+  Serial.print(F("   av: "));
   Serial.print(round(data[task_id].av));
-  Serial.print("   pr: ");
+  Serial.print(F("   pr: "));
   Serial.println(data[task_id].pr);
-  //Serial.print("Sum: "); Serial.print(sum); Serial.print("   Laps: "); Serial.println(laps);
+  //Serial.print(F("Sum: "); Serial.print(F(sum); Serial.print(F("   Laps: "); Serial.println(F(laps);
 
   if (data[task_id].av == 0) {  //when average is not defined yet (== 0)
-    Serial.print("Aaverage updated: ");
+    Serial.print(F("Aaverage updated: "));
     Serial.print(data[task_id].av);
-    Serial.print(" --> ");
+    Serial.print(F(" --> "));
     data[task_id].av = sum / laps;
   } else {
-    Serial.print("Average updated: ");
+    Serial.print(F("Average updated: "));
     Serial.print(data[task_id].av);
-    Serial.print(" --> ");
+    Serial.print(F(" --> "));
     data[task_id].av = data[task_id].av * 0.8 + sum / laps * 0.2;  //data[task_id].av = sum / laps; // 124s
   }
   Serial.print(data[task_id].av);
   int av = round(data[task_id].av);
-  Serial.print(" --> ");
+  Serial.print(F(" --> "));
   Serial.println(av);
   //just for display of average
   int av_m = getMin(data[task_id].av);
@@ -601,19 +602,19 @@ void scoreTime() {
   }
   //DECREASE IN TIME -> DOWN
   else if (diff < -threshold) {  //if difference is less than -threshold than there is big decrease of the laptime in relation to average (better)
-    //Serial.println("down");
+    //Serial.println(F("down");
     tft.pushImage(x_image, y_image, 32, 32, down);
     tft.drawString("-" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
   }
   //INCREASE IN TIME -> UP
   else if (diff > threshold) {  //if difference is bigger than threshold than there is big increase of the laptime in relation to average (worse)
-    //Serial.println("up");
+    //Serial.println(F("up");
     tft.pushImage(x_image, y_image, 32, 32, up);
     tft.drawString("+" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
   }
   //EQUAL
   else {  // if difference is between -threshold and threshold, difference is not considerably big
-    //Serial.println("equal");
+    //Serial.println(F("equal");
     tft.pushImage(x_image, y_image, 32, 32, equal);  //32 32
     if (minus) tft.drawString("-" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
     else tft.drawString("+" + diff_m_ + ":" + diff_s_, x_text, y_text, 4);
@@ -630,9 +631,9 @@ void buttons() {
       laptime = laptime_m * 60 + laptime_s;
 
 
-      Serial.print("Laptime: ");
+      Serial.print(F("Laptime: "));
       Serial.print(laptime_m);
-      Serial.print(":");
+      Serial.print(F(":"));
       Serial.println(laptime_s);
 
       //lap time is always positive
@@ -657,7 +658,7 @@ void buttons() {
 
   if (yellow.clicked) {
     if (pom2 == 0) {
-      Serial.println(" break");
+      Serial.println(F(" break"));
 
       if (wifi == 1){
         sendInfo_final_task(task_id, round(data[task_id].av), data[task_id].pr, tt_h * 60 + tt_m, emp_id);

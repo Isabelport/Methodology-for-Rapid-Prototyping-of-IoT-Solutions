@@ -6,7 +6,7 @@
 #include "secrets.h"
 //Constants
 
-#define implementation
+//#define implementation
 
 #define SS_PIN 5
 #define RST_PIN 3

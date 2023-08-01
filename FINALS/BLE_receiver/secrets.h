@@ -4,7 +4,7 @@
 #define STA_PASS "HotspotIsabel"*/
 
 
-#define STA_SSID "ARQUILED"
+#define STA_SSID "ARQUILED_Piso_1"
 #define STA_PASS "BBAADDCC55"  
 
 /***** The ThingsBoard parameters *****/
@@ -16,9 +16,9 @@
 // #define THINGSBOARD_SERVER  "demo.thingsboard.io"
 
 //BLE Reveiver Device Token
-//#define TOKEN "xBKIxRmBAR9QzLdDCXGz" //esp1
+#define TOKEN "xBKIxRmBAR9QzLdDCXGz" //esp1
 //#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
-#define TOKEN "jaJv4liL5EJsUDLj9MWt" //esp3
+//#define TOKEN "jaJv4liL5EJsUDLj9MWt" //esp3
 
 
 /***** BLE System UUID *****/

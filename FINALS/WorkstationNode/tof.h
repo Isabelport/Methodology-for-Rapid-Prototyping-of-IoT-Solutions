@@ -25,20 +25,20 @@ SFEVL53L1X distanceSensor(Wire, SHUTDOWN_PIN, INTERRUPT_PIN);
 
 void initDistSensor() {
   if (distanceSensor.begin() != 0){  //Begin returns 0 on a good init
-    Serial.println("ToF failed to begin. Please check wiring. Freezing...");
+    Serial.println(F("ToF failed to begin. Please check wiring. Freezing..."));
     while(distanceSensor.begin()){
-      Serial.println("ToF failed to begin. Please check wiring. Freezing...");
+      Serial.println(F("ToF failed to begin. Please check wiring. Freezing..."));
       tft.drawString("Verificar ToF", 5, 80, 4);
       delay(500);
     }
-    Serial.println("ToF ready!");
+    Serial.println(F("ToF ready!"));
     tft.fillRect(10, 80, 40, 100, TFT_BLACK);
     tft.drawString("ToF conectado", 5, 80, 4);
     delay(1500);
 
   }
   else{
-    Serial.println("ToF ready!");
+    Serial.println(F("ToF ready!"));
     tft.drawString("ToF conectado", 5, 80, 4);
     delay(2000);
   }
@@ -61,9 +61,9 @@ int getDistance(){
   int distance = distanceSensor.getDistance(); //Get the result of the measurement from the sensor
   distanceSensor.clearInterrupt();
   //distanceSensor.stopRanging();
-  //Serial.print("Distance(mm): ");
-  //Serial.print(distance);
-  //Serial.println();
+  //Serial.print(F("Distance(mm): ");
+  //Serial.print(F(distance);
+  //Serial.println(F();
 
   return distance;
   
@@ -95,7 +95,7 @@ void checkAndSendDistance(){
         } else {
           state = 0;
         }
-        Serial.print("Sending distance:");
+        Serial.print(F("Sending distance:"));
         Serial.println(distance);
         sendInfo_tof(distance, state, emp_id);
       }
