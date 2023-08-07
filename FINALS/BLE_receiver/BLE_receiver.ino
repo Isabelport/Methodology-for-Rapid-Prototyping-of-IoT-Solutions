@@ -6,7 +6,7 @@
 #include <BLEAdvertisedDevice.h>
 #include "secrets.h"
 
-#define implementation
+//#define implementation
 
 //program vars
 #define AWAY 0
@@ -130,7 +130,7 @@ void sendInfo(int type, int idx) {
       Telemetry data[data_items] = {
         { "state", AWAY },
         { "id", idx },
-        { "rssi", 0 },
+        { "rssi", -100 },
       };
       tb.sendTelemetry(data, data_items);
     } else {
@@ -140,7 +140,7 @@ void sendInfo(int type, int idx) {
       Telemetry data[data_items] = {
         { "state", AWAY },
         { "id", active[idx][0] },
-        { "rssi", 0 },
+        { "rssi", -100 },
       };
       tb.sendTelemetry(data, data_items);
     }

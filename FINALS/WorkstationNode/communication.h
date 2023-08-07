@@ -2,9 +2,12 @@
 #include <ThingsBoard.h>  // ThingsBoard SDK
 
 // Initialize ThingsBoard client
-WiFiClient espclient; //espclient
+WiFiClient espClient; //espclient
 // Initialize ThingsBoard instance
-ThingsBoard tb(espclient); //espclient
+//ThingsBoard tb(espclient); //espclient
+constexpr uint32_t MAX_MESSAGE_SIZE PROGMEM = 512U;
+
+ThingsBoard tb(espClient, MAX_MESSAGE_SIZE);
 // the Wifi radio's status
 int status = WL_IDLE_STATUS;
 int prev_task = -1;
@@ -97,28 +100,31 @@ void sendInfo_final_task(int task_id, int av, int pr, int total_min, int emp_id)
   // Reconnect to ThingsBoard, if needed
   connectTB();
   //was not able to send more than 3 infos at a time, if possible change this
-  const int data_items1 = 3;
+  const int data_items1 = 6;
   //taskid indicates task related to this data
   Telemetry datat[data_items1] = {
     { "av", av },
     { "pr", pr },
     { "taskid", task_id }, 
+    { "totalm", total_min },
+    { "emp_id", emp_id },
+    { "count", count }, 
     };
-  const int data_items2 = 3;
+  //const int data_items2 = 3;
     //task = 0 to show on things board that we are in break
-  Telemetry datatt[data_items2] = {
+  /*Telemetry datatt[data_items2] = {
     { "totalm", total_min },
     { "emp_id", emp_id },
     { "count", count }, 
     // { "task", 0 }, 
-  };
+  };*/
   /*
   Serial.print("Sending final info... av: "); Serial.print(av); Serial.print(" pr: "); Serial.print(pr); Serial.print(" taskid: "); Serial.println(F(task_id);  Serial.print(" total h: "); 
   Serial.print(total_min/60); Serial.print(" total m: "); Serial.print(total_min%60); Serial.print(" emp: "); Serial.print(emp_id); Serial.print(" final count: "); Serial.print(count);
   Serial.print(" task: "); Serial.println(F(0));*/
   //Serial.print(" break: ");
   tb.sendTelemetry(datat, data_items1);
-  tb.sendTelemetry(datatt, data_items2);
+  //tb.sendTelemetry(datatt, data_items2);
   count = 0;
   prev_task = task_id;
 

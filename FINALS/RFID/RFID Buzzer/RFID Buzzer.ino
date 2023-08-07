@@ -4,15 +4,19 @@
 #include <WiFi.h>         // WiFi control for ESP32
 #include <ThingsBoard.h>  // ThingsBoard SDK
 #include "secrets.h"
+#include "pitches.h"
 //Constants
 
-//#define implementation
+#define implementation
 
 #define SS_PIN 5
 #define RST_PIN 3
 #define MISO_PIN 19
 #define MOSI_PIN 23
 #define SCK_PIN 18
+
+#define BUZZZER_PIN 25  // ESP32 pin GPIO33 connected to piezo buzzer
+
 //Variables
 byte nuidPICC[4] = { 0, 0, 0, 0 };
 MFRC522::MIFARE_Key key;
@@ -37,8 +41,8 @@ int status = WL_IDLE_STATUS;
 
 //gabarit is a working tray for the production line
 const int num_of_gabarits = 24;
-int rfid_gabarit[num_of_gabarits][4] = { { 225, 175, 204, 27 },  //1 
-                                         { 161, 197, 72, 72 },   //2 
+int rfid_gabarit[num_of_gabarits][4] = { { 225, 175, 204, 27 },  //1
+                                         { 161, 197, 72, 72 },   //2
                                          { 192, 243, 214, 29 },  //3
                                          { 50, 220, 19, 76 },    //4
                                          { 162, 148, 223, 29 },  //5
@@ -64,9 +68,7 @@ int rfid_gabarit[num_of_gabarits][4] = { { 225, 175, 204, 27 },  //1
 
 
 void rfid_settings() {
-  Serial.println(rfid.PCD_GetAntennaGain());  // gives me a 64 (00000010)
-  rfid.PCD_SetAntennaGain(rfid.RxGain_max);   // set to max (00001110)
-  Serial.println(rfid.PCD_GetAntennaGain());  //gives me the 112
+  rfid.PCD_SetAntennaGain(rfid.RxGain_max);  // set to max (00001110)
   ledcSetup(pwmLedChannelTFT, pwmFreq, pwmResolution);
   //ledcAttachPin(TFT_BL, pwmLedChannelTFT);
   ledcWrite(pwmLedChannelTFT, 67);
@@ -96,6 +98,18 @@ void InitWiFi() {
   Serial.println("Connected to AP");
 }
 
+int melody_1[] = {
+  NOTE_E5, NOTE_FS5, NOTE_B5
+};
+
+int melody_2[] = {
+  NOTE_E6, NOTE_FS6, NOTE_B6
+};
+
+int noteDurations[] = {
+  10, 10, 10
+};
+
 
 void setup() {
   //Init Serial USB
@@ -104,24 +118,48 @@ void setup() {
 #endif
   Serial.println("Initialize RFID");
   SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);  // CHANGE DEFAULT PINS
+  tone(BUZZZER_PIN, NOTE_E5, 50);
+  delay(50);
+  noTone(BUZZZER_PIN);
   rfid.PCD_Init();
   Serial.print("Reader :");
   rfid.PCD_DumpVersionToSerial();
-  Serial.println("RFID ready");
+  Serial.println(rfid.VersionReg);
   rfid_settings();
+  while (!rfid.PCD_PerformSelfTest()) {
+    delay(500);
+  }
+  Serial.println("RFID ready");
+  playMelody(melody_1);
+
   Serial.println("Please pass gabarit card");
-  
+
   WiFi.begin(STA_SSID, STA_PASS);
   InitWiFi();
   connectTB();
+  playMelody(melody_2);
+}
+
+void playMelody(int melody[]) {
+  for (int thisNote = 0; thisNote < 3; thisNote++) {
+    int noteDuration = 1000 / noteDurations[thisNote];
+    tone(BUZZZER_PIN, melody[thisNote], noteDuration);
+
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    noTone(BUZZZER_PIN);
+  }
 }
 
 void loop() {
 
   int id = readRFID();
-  //delay(100);
 
   if (id != -1) {
+    Serial.println("bip");
+    tone(BUZZZER_PIN, NOTE_C6, 50);
+    delay(50);
+    noTone(BUZZZER_PIN);
     if (last_send != id) {
       sendInfo(id);
       Serial.print("1: ");
@@ -164,9 +202,9 @@ int readRFID() {
   for (byte i = 0; i < 4; i++) {
     nuidPICC[i] = rfid.uid.uidByte[i];
   }
-  printDec(rfid.uid.uidByte, rfid.uid.size);
+
   id = getCardId(rfid.uid.uidByte, rfid.uid.size);
-  
+
 
   // Halt PICC
   rfid.PICC_HaltA();
@@ -215,6 +253,16 @@ bool compareRfid(int rfid1[], int rfid2[], int size) {
     return false;
 }
 
+//Helper routine to dump a byte array as dec values to Serial.
+void printDec(byte* buffer, byte bufferSize) {
+  for (byte i = 0; i < bufferSize; i++) {
+    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i], DEC);
+    Serial.print(", ");
+  }
+  Serial.println();
+}
+
 void connectTB() {
   // Reconnect to ThingsBoard, if needed
   while (!tb.connected()) {
@@ -248,14 +296,4 @@ void sendInfo(int gabarit) {
 
   // Process messages
   tb.loop();
-}
-
-//Helper routine to dump a byte array as dec values to Serial.
-void printDec(byte* buffer, byte bufferSize) {
-  for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
-    Serial.print(buffer[i], DEC);
-    Serial.print(", ");
-  }
-  Serial.println();
 }
