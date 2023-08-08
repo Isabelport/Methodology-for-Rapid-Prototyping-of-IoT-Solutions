@@ -6,7 +6,13 @@ TFT_eSPI tft = TFT_eSPI();
 const int BUFFER_SIZE = 14;   // RFID DATA FRAME FORMAT: 1byte head (value: 2), 10byte data (2byte version + 8byte tag), 2byte checksum, 1byte tail (value: 3)
 const int DATA_TAG_SIZE = 8;  // 8byte tag
 
-SoftwareSerial SoftSerial(1, 2);
+//#define implementation
+
+#define rxPin 17
+#define txPin 18
+SoftwareSerial SoftSerial(rxPin, txPin);
+//SoftwareSerial SoftSerial(17, 18);
+
 
 uint8_t buffer[BUFFER_SIZE];  // used to store an incoming data frame
 int buffer_index = 0;
@@ -32,20 +38,25 @@ String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo"
                                                "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
 
 void setup() {
-  Serial.begin(115200);
-  SoftSerial.begin(9600);
-  SoftSerial.listen();
-
-  Serial.println("INIT DONE");
+  pinMode(rxPin, INPUT);
+  pinMode(txPin, OUTPUT);
   //TFT
   tft.init();
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   tft.fillScreen(TFT_PINK);
-  
+
   tft.fillRectVGradient(0, 60, 160, 50, TFT_ORANGE, TFT_RED);
-  tft.setCursor(10,70);
+  tft.setCursor(10, 70);
   tft.print("Vertical gradient");
-  delay(100);
+  delay(1000);
+
+#ifndef implementation
+  Serial.begin(115200);
+#endif
+
+  SoftSerial.begin(9600);
+  SoftSerial.listen();
+  Serial.println("INIT DONE");
 }
 
 void loop() {
@@ -98,7 +109,7 @@ long extractTag() {
     msg_tag_str[i] = char(msg_data_tag[i]);
   }
 
-  long msg_tag;
+  long msg_tag = 0;
   msg_tag = strtol(msg_tag_str, NULL, 16);
 
   Serial.print("msg_tag ");
@@ -121,7 +132,7 @@ int getCardId(long tag) {
   id = id + 1;
   Serial.print("id: ");
   Serial.println(id);
-  Serial.print(employee_name[id]);
+  Serial.println(employee_name[id]);
 
   return id;
 }
@@ -129,8 +140,6 @@ int getCardId(long tag) {
 
 bool compareRfid(long rfid1, long rfid2) {
   int equal = 0;
-  Serial.print("tag: ");
-  Serial.println(rfid1);
   Serial.print("compare w: ");
   Serial.println(rfid2);
   if (rfid1 == rfid2) {

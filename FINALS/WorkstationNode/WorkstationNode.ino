@@ -1,7 +1,7 @@
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
 
-//#define implementation
+#define implementation
 
 #include "fonts.h"
 #include "icons.h"
@@ -55,6 +55,13 @@ int threshold = 1;
 
 /*******************************************CODE*********************************************/
 void setup() {
+  //Initialize buttons
+  pinMode(GREEN_BUTTON, INPUT_PULLUP);
+  pinMode(YELLOW_BUTTON, INPUT_PULLUP);
+
+  pinMode(rxPin, INPUT);
+  pinMode(txPin, OUTPUT);
+
   //Initialize screen
   tft.init();
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
@@ -72,10 +79,6 @@ void setup() {
   ledcWrite(pwmLedChannelTFT, 67);
   tft.setSwapBytes(true);
 
-  //Initialize buttons
-  pinMode(GREEN_BUTTON, INPUT_PULLUP);
-  pinMode(YELLOW_BUTTON, INPUT_PULLUP);
-
   //Initialize wifi and TB //sendinfo
   if (wifi == 1) {
     tft.drawString("Por favor ligar-se ao Wi-Fi.", 5, 70, 4);
@@ -85,13 +88,14 @@ void setup() {
   }
   tft.fillScreen(TFT_BLACK);
 
+  Serial.println(F("Initialize RFID employee"));
+  initRFIDSensor_employee();
+
   //Initialize RFID
   Serial.println(F("Initialize RFID"));
   SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, SS_PIN);  // CHANGE DEFAULT PINS
   initRFIDSensor();
 
-  Serial.println(F("Initialize RFID employee"));
-  initRFIDSensor_employee();
 
   //Initialize ToF
   Serial.println(F("Initialize ToF"));
@@ -169,6 +173,8 @@ void waitForCard_screen(String mode) {
   //int pre_task_id = task_id;
   delay(100);
   tft.fillScreen(TFT_BLACK);
+          Serial.print("emp_id2: ");
+        Serial.println(emp_id);
   //tft.init();
   //tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   //tft.fillScreen(TFT_BLACK);
@@ -258,6 +264,7 @@ void waitForCard_screen(String mode) {
       if (mode == "task") {
         Serial.println(F("here"));
         //task_id = -1;
+        emp_id = -1;
         waitForCard_screen("employee");
         break;
       }
@@ -273,7 +280,7 @@ void break_screen(String mode) {
   int prev_task_id = task_id;
   delay(100);
   tft.fillScreen(TFT_BLACK);
- 
+
   if (mode == "task") {
     tft.setTextColor(TFT_WHITE);
     Serial.println(F("Break screen task"));
@@ -378,7 +385,9 @@ void break_screen(String mode) {
           pom2 = 1;
         }
         //task_id = -1;
-        //emp_id = -1;
+        emp_id = -1;
+        Serial.print("emp_id: ");
+        Serial.println(emp_id);
         waitForCard_screen("employee");
         break;
       } else {

@@ -2,8 +2,8 @@
 #include <Wire.h>
 
 //Optional interrupt and shutdown pins.
-#define INTERRUPT_PIN 18
-#define SHUTDOWN_PIN 17
+#define INTERRUPT_PIN 1
+#define SHUTDOWN_PIN 2
 #define SCL_PIN 21
 #define SDA_PIN 16
 

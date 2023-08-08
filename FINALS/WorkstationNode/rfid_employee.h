@@ -2,10 +2,9 @@
 
 const int BUFFER_SIZE = 14;   // RFID DATA FRAME FORMAT: 1byte head (value: 2), 10byte data (2byte version + 8byte tag), 2byte checksum, 1byte tail (value: 3)
 const int DATA_TAG_SIZE = 8;  // 8byte tag
-#define YELLOW_PIN 1
-#define WHITE_PIN 2
-
-SoftwareSerial SoftSerial(YELLOW_PIN, WHITE_PIN);
+#define rxPin 17
+#define txPin 18
+SoftwareSerial SoftSerial(rxPin, txPin);
 
 uint8_t buffer[BUFFER_SIZE];  // used to store an incoming data frame
 int buffer_index = 0;
@@ -15,8 +14,8 @@ const int num_of_employees = 14;
 long int rfid_employee[num_of_employees] = { 7522210,   //1
                                              7278157,   //2
                                              5678679,   //3
-                                             7363554,  //4
-                                             0,         //5
+                                             7363554,   //4
+                                             11427961,  //5
                                              1,         //6
                                              2,         //7
                                              3,         //8
@@ -27,7 +26,11 @@ long int rfid_employee[num_of_employees] = { 7522210,   //1
                                              8,         //13
                                              9 };       //14
 
-                                             //////////////REAL DATA
+String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Luis", "Joao", "Joaquim", "Lidia",
+                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
+
+
+//////////////REAL DATA
 /*
 String rfid_employee[num_of_employees] = { "0007263753",    //1
                                                  "0007263832",    //2
@@ -44,10 +47,12 @@ String rfid_employee[num_of_employees] = { "0007263753",    //1
                                                  "0007232194",    //13
                                                  "0002152644" };  //14*/
 
-String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
-                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
+//String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
+//"Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
 
-void initRFIDSensor_employee(){
+void initRFIDSensor_employee() {
+  pinMode(rxPin, INPUT);
+  pinMode(txPin, OUTPUT);
   SoftSerial.begin(9600);
   SoftSerial.listen();
 
@@ -65,7 +70,7 @@ long extractTag_employee() {
     msg_tag_str[i] = char(msg_data_tag[i]);
   }
 
-  long msg_tag;
+  long msg_tag = 0;
   msg_tag = strtol(msg_tag_str, NULL, 16);
 
   Serial.print("msg_tag ");
@@ -109,7 +114,7 @@ int getCardId_employee(long tag) {
 }
 
 
-int readRFID_employee(){
+int readRFID_employee() {
   if (SoftSerial.available() > 0) {
     bool call_extract_tag = false;
 
