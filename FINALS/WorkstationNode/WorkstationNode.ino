@@ -1,7 +1,7 @@
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
 
-#define implementation
+//#define implementation
 
 #include "fonts.h"
 #include "icons.h"
@@ -41,7 +41,7 @@ String tt_current, tt_temp;
 int laptime = 0;  //laptime in seconds
 int laptime_m = 0;
 int laptime_s = 0;
-int break_m = 0;  //counts the amount of time in break
+int break_m = 0;  //counts the amount of min in break
 int break_s = 2;  //accounts for the delay it takes to start
 int break_ss = 0;
 //Interface
@@ -173,8 +173,8 @@ void waitForCard_screen(String mode) {
   //int pre_task_id = task_id;
   delay(100);
   tft.fillScreen(TFT_BLACK);
-          Serial.print("emp_id2: ");
-        Serial.println(emp_id);
+  Serial.print("emp_id2: ");
+  Serial.println(emp_id);
   //tft.init();
   //tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   //tft.fillScreen(TFT_BLACK);
@@ -187,7 +187,7 @@ void waitForCard_screen(String mode) {
     tft.setTextColor(TFT_WHITE);
     tft.drawString("Para continuar", 5, 70, 4);
     tft.drawString("inserir cartao da TAREFA.", 5, 95, 4);
-    delay(1000);
+    //delay(1000);
 
     //tft.setTextColor(TFT_CYAN);
     //tft.drawString("ou clicar no botao amarelo", 5, 105, 4);
@@ -215,7 +215,12 @@ void waitForCard_screen(String mode) {
     //since the function of readrfid takes a part of the processing, the seconds seem "slower",
     //so we assumed that 40ms are 1 second, which in the end actually look like one second
     if (break_ss > 40) {  //counting "seconds" for break time
+                          //
       break_s++;
+      Serial.print(F("Break time: "));
+      Serial.print(break_m);
+      Serial.print(F(":"));
+      Serial.println(break_s);
       break_ss = 0;
     }
 
@@ -231,19 +236,22 @@ void waitForCard_screen(String mode) {
     if (wifi == 1)
       checkAndSendDistance();
 
-    if (break_s_prev != break_s) {
-      //Serial.println(F("ohyeye");
 
-      if (mode == "task") {
+
+
+    if (mode == "employee") {
+      emp_id = readRFID_employee();
+      if (emp_id != -1) {
+        waitForCard_screen("task");
+        break;
+      }
+    }
+
+    else if (mode == "task") {
+      if (break_s_prev != break_s) { //or else it will crash
         task_id = readRFID();
         if (task_id != -1) {
           break_screen("task");
-          break;
-        }
-      } else if (mode == "employee") {
-        emp_id = readRFID_employee();
-        if (emp_id != -1) {
-          waitForCard_screen("task");
           break;
         }
       }
@@ -305,10 +313,10 @@ void break_screen(String mode) {
 
     // SECONDS
     if (break_ss > 99) {  //counting seconds for break time
-      /*Serial.print(F("Break time: ");
-      Serial.print(F(break_m);
-      Serial.print(F(":");
-      Serial.println(F(break_s);*/
+      Serial.print(F("Break time: "));
+      Serial.print(break_m);
+      Serial.print(F(":"));
+      Serial.println(break_s);
       break_s++;
       break_ss = 0;
     }

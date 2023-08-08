@@ -115,6 +115,7 @@ int getCardId_employee(long tag) {
 
 
 int readRFID_employee() {
+  Serial.println("read emp");
   if (SoftSerial.available() > 0) {
     bool call_extract_tag = false;
 
