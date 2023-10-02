@@ -2,15 +2,17 @@
 
 const int BUFFER_SIZE = 14;   // RFID DATA FRAME FORMAT: 1byte head (value: 2), 10byte data (2byte version + 8byte tag), 2byte checksum, 1byte tail (value: 3)
 const int DATA_TAG_SIZE = 8;  // 8byte tag
-#define rxPin 17
-#define txPin 18
+#define rxPin 17              //amarelo
+#define txPin 18              //branco
 SoftwareSerial SoftSerial(rxPin, txPin);
 
 uint8_t buffer[BUFFER_SIZE];  // used to store an incoming data frame
 int buffer_index = 0;
 int emp_id = -1;
 
-const int num_of_employees = 14;
+const int num_of_employees = 15;
+
+/*
 long int rfid_employee[num_of_employees] = { 7522210,   //1
                                              7278157,   //2
                                              5678679,   //3
@@ -26,29 +28,30 @@ long int rfid_employee[num_of_employees] = { 7522210,   //1
                                              8,         //13
                                              9 };       //14
 
-String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Luis", "Joao", "Joaquim", "Lidia",
-                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
+String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
+                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo", "Luis" };  //0 is for unrecognized employee
 
-
+*/
 //////////////REAL DATA
-/*
-String rfid_employee[num_of_employees] = { "0007263753",    //1
-                                                 "0007263832",    //2
-                                                 "0002157941",    //3
-                                                 "0007263831",    //4
-                                                 "0007263893",    //5
-                                                 "0007263988",    //6
-                                                 "0007263755",    //7
-                                                 "0007263835",    //8
-                                                 "0007263752",    //9
-                                                 "0007263833",    //10
-                                                 "0007263795",    //11
-                                                 "0007263795",    //12
-                                                 "0007232194",    //13
-                                                 "0002152644" };  //14*/
 
-//String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
-//"Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
+long int rfid_employee[num_of_employees] = { 7263753,     //1
+                                           7263832,     //2
+                                           2157941,     //3
+                                           7263831,     //4
+                                           7263893,     //5
+                                           7263988,     //6
+                                           7263755,     //7
+                                           7263835,     //8
+                                           7263752,     //9
+                                           7263833,     //10
+                                           7263236,     //11
+                                           7263795,     //12
+                                           7232194,     //13
+                                           2152644,    //14
+                                           11427961 };  //15
+
+String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
+"Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo", "Luis" };  //0 is for unrecognized employee
 
 void initRFIDSensor_employee() {
   pinMode(rxPin, INPUT);
@@ -115,7 +118,6 @@ int getCardId_employee(long tag) {
 
 
 int readRFID_employee() {
-  Serial.println("read emp");
   if (SoftSerial.available() > 0) {
     bool call_extract_tag = false;
 

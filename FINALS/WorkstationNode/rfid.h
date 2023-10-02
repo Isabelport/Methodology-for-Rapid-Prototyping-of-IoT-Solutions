@@ -176,30 +176,31 @@ int readRFID() {  //mode TASK
   return id;
 }
 
+////////////////////////////////////////////////////MUDAR NOMES E TEMPOS DE TAREFAS"///////////////////////////////////////////////////////////////
 task assignTaskValues(task data[]) {  // id 0-6
 
   //0 is break
-  data[0].task_name = "Pausa";  //break
+  data[0].task_name = "Pausa";  //NAO MUDAR
   data[0].av = 0;
   data[0].pr = 0;
 
-  data[1].task_name = "TEKOX Cabo P&V";
+  data[1].task_name = "TEKOX Cabo P&V";//"Preparacao Tampa";
   data[1].av = 12;
   data[1].pr = 0;
 
-  data[2].task_name = "TEKOX Cabo A&C";
+  data[2].task_name = "TEKOX Cabo A&C"; //"Tekox Cabo A&C+Terra";
   data[2].av = 12;
   data[2].pr = 0;
 
-  data[3].task_name = "Montagem MFALG";
+  data[3].task_name = "Montagem MFALG"; //"Montagem Modulo";
   data[3].av = 144;
   data[3].pr = 0;
 
-  data[4].task_name = "Parafusos lentes";
+  data[4].task_name = "Parafusos lentes"; //"Lente e chips";
   data[4].av = 40;
   data[4].pr = 0;
 
-  data[5].task_name = "";  //activity __
+  data[5].task_name = ""; //activity __ "Porca em PCB";";  
   data[5].av = 0;
   data[5].pr = 0;
 

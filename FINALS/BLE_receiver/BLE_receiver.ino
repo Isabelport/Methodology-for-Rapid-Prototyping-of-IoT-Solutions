@@ -6,7 +6,7 @@
 #include <BLEAdvertisedDevice.h>
 #include "secrets.h"
 
-//#define implementation
+#define implementation
 
 //program vars
 #define AWAY 0
@@ -110,7 +110,7 @@ void sendInfo(int type, int idx) {
     }
   }
   Serial.println("-> Sending data...");
-  const int data_items = 3;
+  const int data_items = 2;
   if (type == NEAR) {
     //device active[idx][0] is close with rssi active[idx][1]
     Serial.print("Beacon NEAR : ");
@@ -118,7 +118,7 @@ void sendInfo(int type, int idx) {
     Serial.print(",  RSSI: ");
     Serial.println(active[idx][1]);
     Telemetry data[data_items] = {
-      { "state", NEAR },
+      //{ "state", NEAR },
       { "id", active[idx][0] },
       { "rssi", active[idx][1] },
     };
@@ -128,7 +128,7 @@ void sendInfo(int type, int idx) {
       Serial.print("Initializing Beacon : ");
       Serial.println(idx);
       Telemetry data[data_items] = {
-        { "state", AWAY },
+        //{ "state", AWAY },
         { "id", idx },
         { "rssi", -100 },
       };
@@ -138,7 +138,7 @@ void sendInfo(int type, int idx) {
       Serial.print("Beacon OUT : ");
       Serial.println(active[idx][0], HEX);
       Telemetry data[data_items] = {
-        { "state", AWAY },
+        //{ "state", AWAY },
         { "id", active[idx][0] },
         { "rssi", -100 },
       };
@@ -175,7 +175,7 @@ void checkState() {
       Serial.println(last_timestamp);
     }
     if (Times[i] != 0 && (last_timestamp - Times[i]) > TIME_THRESHOLD) {
-      //if(active[i][0]!=-1){ // ISABEL
+      //if(active[i][0]!=-1){
       Serial.print("Removing Beacon: ");
       Serial.println(active[i][0]);
       sendInfo(AWAY, i);
@@ -255,7 +255,7 @@ void setup() {
 
   for (int i = 0; i < MAX_DEVICES; i++) {
     sendInfo(AWAY, i + 1);  //initializes all beacons in ThingsBoard to Away
-    //initialize devices array
+    //initialize devices array when receiver is turned on.
     active[i][0] = -1;
     active[i][1] = 0;
     active[i][2] = 0;

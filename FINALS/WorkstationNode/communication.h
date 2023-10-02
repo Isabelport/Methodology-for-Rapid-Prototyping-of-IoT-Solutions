@@ -79,6 +79,7 @@ void sendInfo_task(int sec, int task, int emp_id) {
     { "sec", sec },
     { "task", task },
     };
+    Serial.println(F("Sending info..."));
     /*
   Serial.print(F("Sending info... min: "); Serial.print(F(sec/60); Serial.print(F(" sec: "); Serial.print(F(sec%60); Serial.print(" task: "); 
   Serial.print(task); Serial.print(" emp: "); Serial.println(F(emp_id));*/
@@ -118,6 +119,7 @@ void sendInfo_final_task(int task_id, int av, int pr, int total_min, int emp_id)
     { "count", count }, 
     // { "task", 0 }, 
   };*/
+  Serial.println("Sending final info...");
   /*
   Serial.print("Sending final info... av: "); Serial.print(av); Serial.print(" pr: "); Serial.print(pr); Serial.print(" taskid: "); Serial.println(F(task_id);  Serial.print(" total h: "); 
   Serial.print(total_min/60); Serial.print(" total m: "); Serial.print(total_min%60); Serial.print(" emp: "); Serial.print(emp_id); Serial.print(" final count: "); Serial.print(count);

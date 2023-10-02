@@ -7,7 +7,7 @@
 #include "pitches.h"
 //Constants
 
-#define implementation
+//#define implementation
 
 #define SS_PIN 5
 #define RST_PIN 3
@@ -60,7 +60,7 @@ int rfid_gabarit[num_of_gabarits][4] = { { 225, 175, 204, 27 },  //1
                                          { 192, 51, 148, 29 },   //17
                                          { 131, 156, 84, 75 },   //18
                                          { 241, 55, 47, 27 },    //19
-                                         { 192, 229, 232, 29 },  //20
+                                         { 208, 221, 242, 81 },  //20
                                          { 32, 107, 165, 81 },   //21
                                          { 162, 89, 115, 29 },   //22
                                          { 16, 166, 117, 81 },   //23
@@ -80,6 +80,9 @@ void reconnect() {
   if (status != WL_CONNECTED) {
     WiFi.begin(STA_SSID, STA_PASS);
     while (WiFi.status() != WL_CONNECTED) {
+      tone(BUZZZER_PIN, NOTE_FS2, 50);
+      delay(50);
+      noTone(BUZZZER_PIN);
       delay(500);
       Serial.print(".");
     }
@@ -121,14 +124,17 @@ void setup() {
   tone(BUZZZER_PIN, NOTE_E5, 50);
   delay(50);
   noTone(BUZZZER_PIN);
+  delay(100);
   rfid.PCD_Init();
   Serial.print("Reader :");
   rfid.PCD_DumpVersionToSerial();
   Serial.println(rfid.VersionReg);
   rfid_settings();
+  /*
   while (!rfid.PCD_PerformSelfTest()) {
+    Serial.println("Cant connect to RFID");
     delay(500);
-  }
+  }*/
   Serial.println("RFID ready");
   playMelody(melody_1);
 
@@ -155,34 +161,32 @@ void loop() {
 
   int id = readRFID();
 
-  if (id != -1) {
+  if (id != -1) { //found tag
     Serial.println("bip");
     tone(BUZZZER_PIN, NOTE_C6, 50);
     delay(50);
     noTone(BUZZZER_PIN);
-    if (last_send != id) {
+    if (last_send != id) { //different tag found
       sendInfo(id);
-      Serial.print("1: ");
       Serial.println(id);
       last_seen_in = millis();
       last_send = id;
     } else if (millis() - last_seen_in >= sampling_time) {  //send repeated message "2","2", with a rate of sampling_time
       sendInfo(id);
-      Serial.print("2: ");
       Serial.println(id);
       last_seen_in = millis();
     }
   }
 
-  if ((millis() - last_seen_in >= max_time) && (last_send != 0)) {
+  if ((millis() - last_seen_in >= max_time) && (last_send != 0)) { //if not seen for too long, send 0 
     sendInfo(0);
-    Serial.print("3: ");
     Serial.println(0);
     last_send = 0;
   }
-
-  rfid.PCD_SoftPowerDown();
-  rfid.PCD_SoftPowerUp();
+  
+  //if needed
+  //rfid.PCD_SoftPowerDown();
+  //rfid.PCD_SoftPowerUp();
 }
 
 
@@ -214,6 +218,7 @@ int readRFID() {
 }
 
 
+//get id of database
 int getCardId(byte* buffer, int size) {
   String buffer_str = "";
   int card_id = -1;
@@ -240,7 +245,7 @@ int getCardId(byte* buffer, int size) {
   return card_id;
 }
 
-
+//find tag in database
 bool compareRfid(int rfid1[], int rfid2[], int size) {
   int equal = 0;
   for (int i = 0; i < size; i++) {
@@ -269,6 +274,9 @@ void connectTB() {
     Serial.println("Connecting to The ThingsBoard");
     if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
       Serial.println("Failed to connect");
+      tone(BUZZZER_PIN, NOTE_FS2, 50);
+      delay(50);
+      noTone(BUZZZER_PIN);
       delay(500);  //return;
     }
   }

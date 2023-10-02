@@ -1,7 +1,8 @@
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
 
-//#define implementation
+//para aceder ao serial, comentar esta linha
+#define implementation
 
 #include "fonts.h"
 #include "icons.h"
@@ -46,6 +47,7 @@ int break_s = 2;  //accounts for the delay it takes to start
 int break_ss = 0;
 //Interface
 int first = 1;
+int reset = -1;
 
 //CHANGE ACCORDING TO TASK
 //time of difference between an increase or decrease in relation to average of time of certain task
@@ -63,7 +65,12 @@ void setup() {
   pinMode(txPin, OUTPUT);
 
   //Initialize screen
-  tft.init();
+  tft.begin();
+  delay(1000);
+  //tft.initDMA();
+  //tft.initBus();
+  tft.fillScreen(TFT_YELLOW);
+  tft.fillScreen(TFT_BLUE);
   tft.setRotation(3);  //1 horizontal cabo do lado direito // 3 horizontal cabo do lado esquerdo
   tft.fillScreen(TFT_BLACK);
   delay(100);
@@ -109,13 +116,16 @@ void setup() {
   assignTaskValues(data);
   Serial.println(F("Ready! Let's start!"));
   sendInfo_task(0, 0, 0);
+  delay(100);
 
   waitForCard_screen("employee");
 }
 
 //zeros all variables
 void reset_screen() {
+  reset = 1;
   //if (first == 1)
+  //sendInfo_task(int sec, int task, int emp_id)
   sendInfo_task(0, task_id, emp_id);
   first = 0;
   delay(100);
@@ -214,14 +224,25 @@ void waitForCard_screen(String mode) {
     // SECONDS
     //since the function of readrfid takes a part of the processing, the seconds seem "slower",
     //so we assumed that 40ms are 1 second, which in the end actually look like one second
-    if (break_ss > 40) {  //counting "seconds" for break time
-                          //
-      break_s++;
-      Serial.print(F("Break time: "));
-      Serial.print(break_m);
-      Serial.print(F(":"));
-      Serial.println(break_s);
-      break_ss = 0;
+    if (mode == "task") {
+      if (break_ss > 40) {  //counting "seconds" for break time                    //
+        break_s++;
+        Serial.print(F("Break time: "));
+        Serial.print(break_m);
+        Serial.print(F(":"));
+        Serial.println(break_s);
+        break_ss = 0;
+      }
+    } else {
+      if (break_ss > 99) {  //counting "seconds" for break time
+                            //
+        break_s++;
+        Serial.print(F("Break time: "));
+        Serial.print(break_m);
+        Serial.print(F(":"));
+        Serial.println(break_s);
+        break_ss = 0;
+      }
     }
 
     // MINUTES
@@ -248,7 +269,7 @@ void waitForCard_screen(String mode) {
     }
 
     else if (mode == "task") {
-      if (break_s_prev != break_s) { //or else it will crash
+      if (break_s_prev != break_s) {  //or else it will crash
         task_id = readRFID();
         if (task_id != -1) {
           break_screen("task");
@@ -376,7 +397,9 @@ void break_screen(String mode) {
         Serial.println(F("START"));
         Serial.println(F("green"));
         if (wifi == 1)
-          sendInfo_task(break_m * 60 + break_s, 0, emp_id);  //tell tb break (7) is over
+          //sendInfo_task(int sec, int task, int emp_id)
+          sendInfo_task(break_m * 60 + break_s, 0, emp_id);  //tell tb break is over
+        delay(1000);
 
 
         if (pom == 0) {
@@ -511,7 +534,8 @@ void averageFunc() {
   Serial.println(data[task_id].pr);
   //Serial.print(F("Sum: "); Serial.print(F(sum); Serial.print(F("   Laps: "); Serial.println(F(laps);
 
-  if (data[task_id].av == 0) {  //when average is not defined yet (== 0)
+  if ((data[task_id].av == 0) || (reset == 1)) {  //when average is not defined yet (== 0)
+    reset = 0;
     Serial.print(F("Aaverage updated: "));
     Serial.print(data[task_id].av);
     Serial.print(F(" --> "));
@@ -628,6 +652,7 @@ void buttons() {
       averageFunc();
       if (wifi == 1)
         sendInfo_task(laptime_m * 60 + laptime_s, task_id, emp_id);
+      delay(100);
       tft.fillRect(10, 70, 120, 60, TFT_BLACK);
       s = 0;
       m = 0;
@@ -643,7 +668,10 @@ void buttons() {
 
       if (wifi == 1) {
         sendInfo_final_task(task_id, round(data[task_id].av), data[task_id].pr, tt_h * 60 + tt_m, emp_id);
+        //delay(100);
+        //sendInfo_task(int sec, int task, int emp_id)
         sendInfo_task(0, 0, emp_id);
+        //delay(100);
       }
       task_id = -1;
       waitForCard_screen("task");

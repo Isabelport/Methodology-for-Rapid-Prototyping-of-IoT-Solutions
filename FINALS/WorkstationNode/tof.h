@@ -11,7 +11,7 @@
 #define MAX_TIME 60000          //ms -> 60s
 #define MIN_TIME 15000          //ms -> 20s
 #define DISTANCE_THRESHOLD 800  //mm -> 80cm
-#define MIN_DIST_CHANGE 20      // 2cm
+#define MIN_DIST_CHANGE 50      // 5cm
 
 #define NEAR 1
 #define AWAY 0
@@ -19,6 +19,7 @@
 unsigned long last_send = 0;
 int last_distance = 0;
 bool state = 0;  //NEAR 1 AWAY 0º
+int distance = 800;
 
 //SFEVL53L1X distanceSensor;
 //Uncomment the following line to use the optional shutdown and interrupt pins.
@@ -58,7 +59,7 @@ int getDistance() {
     return -1;  //data not ready
   }
 
-  int distance = distanceSensor.getDistance();  //Get the result of the measurement from the sensor
+  distance = distanceSensor.getDistance();  //Get the result of the measurement from the sensor
   distanceSensor.clearInterrupt();
   //distanceSensor.stopRanging();
   //Serial.print(F("Distance(mm): ");
@@ -86,7 +87,9 @@ void checkAndSendDistance() {
     int to_send = checkDistance(distance);
     if (to_send) {
       if (distance <= DISTANCE_THRESHOLD) {
-        if (abs(distance - last_distance) <= MIN_DIST_CHANGE) {  //if change is less than MIN_DIST_CHANGE, probably an object is in the way, so state = 0.
+        Serial.println(last_distance);
+        Serial.println(distance);
+        if ((abs(distance - last_distance) <= MIN_DIST_CHANGE) && (task_id == -1)) {  //if change is less than MIN_DIST_CHANGE, probably an object is in the way, so state = 0.
           state = 0;
           Serial.println("if1");
         } else {
@@ -107,6 +110,7 @@ void checkAndSendDistance() {
       sendInfo_tof(distance, state, emp_id);
       last_send = millis();
       last_distance = distance;
+      
     }
   }
 }

@@ -1,11 +1,6 @@
 /***** Wi-Fi Credentials *****/
-
-#define STA_SSID "LAPTOP-ISABEL"
-#define STA_PASS "HotspotIsabel"
-
-/*
 #define STA_SSID "ARQUILED_Piso_1"
-#define STA_PASS "BBAADDCC55"  */
+#define STA_PASS "BBAADDCC55"  
 
 /***** The ThingsBoard parameters *****/
 
@@ -17,9 +12,9 @@
 
 //BLE Reveiver Device Token
 //#define TOKEN "xBKIxRmBAR9QzLdDCXGz" //esp1
-//#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
+#define TOKEN "LiAv1GOIKo2QW2muqONS" //esp2 
 //#define TOKEN "jaJv4liL5EJsUDLj9MWt" //esp3
-#define TOKEN "Ny7Xygm9335ZJbwJpqjg" //esp4
+//#define TOKEN "Ny7Xygm9335ZJbwJpqjg" //esp4
 
 
 /***** BLE System UUID *****/

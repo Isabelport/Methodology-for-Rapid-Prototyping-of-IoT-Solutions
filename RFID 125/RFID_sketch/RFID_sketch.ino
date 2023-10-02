@@ -6,8 +6,14 @@
 */
 
 #include <SoftwareSerial.h>
+const int BUFFER_SIZE = 14;   // RFID DATA FRAME FORMAT: 1byte head (value: 2), 10byte data (2byte version + 8byte tag), 2byte checksum, 1byte tail (value: 3)
+const int DATA_TAG_SIZE = 8;  // 8byte tag
 
-SoftwareSerial SoftSerial(1, 2);
+//#define implementation
+
+#define rxPin 17              //amarelo
+#define txPin 18              //branco
+SoftwareSerial SoftSerial(rxPin, txPin);
 unsigned char buffer[64];  // buffer array for data receive over serial port
 int count = 0;             // counter for buffer array
 

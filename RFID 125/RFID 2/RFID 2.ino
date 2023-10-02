@@ -8,8 +8,8 @@ const int DATA_TAG_SIZE = 8;  // 8byte tag
 
 //#define implementation
 
-#define rxPin 17
-#define txPin 18
+#define rxPin 17              //amarelo
+#define txPin 18              //branco
 SoftwareSerial SoftSerial(rxPin, txPin);
 //SoftwareSerial SoftSerial(17, 18);
 
@@ -18,24 +18,49 @@ uint8_t buffer[BUFFER_SIZE];  // used to store an incoming data frame
 int buffer_index = 0;
 int emp_id = -1;
 
-const int num_of_employees = 14;
-long int rfid_employee[num_of_employees] = { 7522210,  //1
-                                             7278157,  //2
-                                             5678679,  //3
-                                             7363554,  //4
-                                             0,        //5
-                                             1,        //6
-                                             2,        //7
-                                             3,        //8
-                                             4,        //9
-                                             5,        //10
-                                             6,        //11
-                                             7,        //12
-                                             8,        //13
-                                             9 };      //14
+
+const int num_of_employees = 15;
+///**/
+/*
+long int rfid_employee[num_of_employees] = { 7522210,   //1
+                                             7278157,   //2
+                                             5678679,   //3
+                                             7363554,   //4
+                                             11427961,  //5
+                                             1,         //6
+                                             2,         //7
+                                             3,         //8
+                                             4,         //9
+                                             5,         //10
+                                             6,         //11
+                                             7,         //12
+                                             8,         //13
+                                             9 };       //14
 
 String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
-                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo" };  //0 is for unrecognized employee
+                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo", "Luis" };  //0 is for unrecognized employee
+
+*/
+//////////////REAL DATA
+
+long int rfid_employee[num_of_employees] = { 7263753,     //1
+                                           7263832,     //2
+                                           2157941,     //3
+                                           7263831,     //4
+                                           7263893,     //5
+                                           7263988,     //6
+                                           7263755,     //7
+                                           7263835,     //8
+                                           7263752,     //9
+                                           7263833,     //10
+                                           7263236,     //11
+                                           7263795,     //12
+                                           7232194,     //13
+                                           2152644,    //14
+                                           11427961 };  //15
+
+String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
+"Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo", "Luis" };  //0 is for unrecognized employee
 
 void setup() {
   pinMode(rxPin, INPUT);
@@ -60,22 +85,27 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("tamos de loop");
 
   if (SoftSerial.available() > 0) {
+    Serial.println("yoyo");
     bool call_extract_tag = false;
 
     int ssvalue = SoftSerial.read();  // read
     if (ssvalue == -1) {              // no data was read
+    Serial.println("ooh");
       return;
     }
 
     if (ssvalue == 2) {  // RDM630/RDM6300 found a tag => tag incoming
       buffer_index = 0;
+      Serial.println("borsegiatrice");
     } else if (ssvalue == 3) {  // tag has been fully transmitted
+    Serial.println("borsegiatore");
       call_extract_tag = true;  // extract tag at the end of the function call
     }
 
-    if (buffer_index >= BUFFER_SIZE) {  // checking for a buffer overflow (It's very unlikely that an buffer overflow comes up!)
+    if (buffer_index >= BUFFER_SIZE) {  // checking for a buffer overflow (It's very unlikely that a buffer overflow comes up!)
       Serial.println("Error: Buffer overflow detected!");
       return;
     }
@@ -84,10 +114,12 @@ void loop() {
 
     if (call_extract_tag == true) {
       if (buffer_index == BUFFER_SIZE) {
+        Serial.println("atteniozione");
         long tag = extractTag();
         emp_id = getCardId(tag);
 
       } else {  // something is wrong... start again looking for preamble (value: 2)
+      Serial.println("pickpockets");
         buffer_index = 0;
         return;
       }

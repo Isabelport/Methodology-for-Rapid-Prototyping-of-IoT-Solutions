@@ -1,5 +1,5 @@
-const int GREEN_BUTTON = 0; //0 sim
-const int YELLOW_BUTTON = 14;
+const int GREEN_BUTTON = 43; //0 sim
+const int YELLOW_BUTTON = 44;
 
 struct button{
   int buttonState;
@@ -16,6 +16,7 @@ button yellow = {HIGH, HIGH, 0, 0, 1, 0};
 unsigned long debounceDelay = 50;    // the debounce time; increase if the output flickers
 
 void setup() {
+  Serial.begin(115200);
   pinMode(GREEN_BUTTON, INPUT_PULLUP);
   pinMode(YELLOW_BUTTON, INPUT_PULLUP);
 }
