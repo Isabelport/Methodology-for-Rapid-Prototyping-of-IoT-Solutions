@@ -150,7 +150,7 @@ void sendInfo(int type, int idx) {
 }
 
 /*
- * Checks if beacons in active[] have not been seen in more than TIME_THRESHOLD.
+ * Checks if beacons in active[] have not been seen in more than time_THRESHOLD.
  * If so, removes beacon from active[] and informs server.
  */
 
@@ -159,6 +159,7 @@ void checkState() {
 
   //Serial.println(last_timestamp);
   for (int i = 0; i < MAX_DEVICES; i++) {
+    /*
     if (active[i][0] != -1) {
       Serial.print("Active");
       Serial.print(i);
@@ -173,9 +174,8 @@ void checkState() {
       Serial.print(" : ");
       Serial.println(Times[i]);
       Serial.println(last_timestamp);
-    }
+    }*/
     if (Times[i] != 0 && (last_timestamp - Times[i]) > TIME_THRESHOLD) {
-      //if(active[i][0]!=-1){
       Serial.print("Removing Beacon: ");
       Serial.println(active[i][0]);
       sendInfo(AWAY, i);
@@ -207,10 +207,9 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
     //Serial.printf("Advertised Device: %s \n", advertisedDevice.toString().c_str());
     uint8_t* advertisement = (uint8_t*)advertisedDevice.getManufacturerData().data();
     if (advertisedDevice.getManufacturerData().length() > 22) {
-      //Serial.print("debug");
       if (memcmp((uint8_t*)uuid_system, (uint8_t*)&advertisement[4], 16) == 0) {
         int beaconRSSI = advertisedDevice.getRSSI();
-        int beaconID = advertisement[21];  //advertisement[19];
+        int beaconID = advertisement[21];  
         Serial.print("Found! Beacon ID: ");
         Serial.println(beaconID, HEX);
         // if beacon seen last scan, get its index in active[], else idx=-1 (to add it to active[])
