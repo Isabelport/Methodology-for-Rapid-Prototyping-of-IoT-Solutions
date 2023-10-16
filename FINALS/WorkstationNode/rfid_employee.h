@@ -12,26 +12,6 @@ int emp_id = -1;
 
 const int num_of_employees = 15;
 
-/*
-long int rfid_employee[num_of_employees] = { 7522210,   //1
-                                             7278157,   //2
-                                             5678679,   //3
-                                             7363554,   //4
-                                             11427961,  //5
-                                             1,         //6
-                                             2,         //7
-                                             3,         //8
-                                             4,         //9
-                                             5,         //10
-                                             6,         //11
-                                             7,         //12
-                                             8,         //13
-                                             9 };       //14
-
-String employee_name[num_of_employees + 1] = { "", "Antonio", "Daniela", "Diogo", "Elisabete", "Isabel", "Joao", "Joaquim", "Lidia",
-                                               "Maria", "Mario", "Patricia", "Raquel", "Ana", "Paulo", "Luis" };  //0 is for unrecognized employee
-
-*/
 //////////////REAL DATA
 
 long int rfid_employee[num_of_employees] = { 7263753,     //1
