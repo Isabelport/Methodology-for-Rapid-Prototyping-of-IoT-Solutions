@@ -32,6 +32,8 @@ This node intends to capture the information of the beacon's signal strength to 
 <img width="296" alt="architecture_beacon" src="https://github.com/Isabelport/Codigo/assets/48717303/61f52fbc-0624-4e96-9470-73d39bb3fa35">
 
 
+Read methodology.pdf for instructions on how to implement the nodes.
+
 ## Task Monitoring Node
 
 This node collects data from repetitive tasks and presents real-time feedback to the employee using it. 
